@@ -1,0 +1,23 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "basic backend server for our final project of \"A Secure Platform for Buying and Selling Pre-Owned Goods.\"",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Suyash-18/A-Secure-Platform-for-Buying-Selling-Pre-Owned-Goods.git"
+  },
+  "author": "Suyash Om Shrishti Yash",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Suyash-18/A-Secure-Platform-for-Buying-Selling-Pre-Owned-Goods/issues"
+  },
+  "homepage": "https://github.com/Suyash-18/A-Secure-Platform-for-Buying-Selling-Pre-Owned-Goods#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}
