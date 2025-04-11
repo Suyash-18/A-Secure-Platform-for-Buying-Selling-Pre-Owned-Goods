@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "description": "basic backend server for our final project of \"A Secure Platform for Buying and Selling Pre-Owned Goods.\"",
   "main": "index.js",
+  "type": "module",
+
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js"
   },
   "repository": {
     "type": "git",
