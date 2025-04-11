@@ -1,0 +1,1 @@
+export const DB_NAME = "A-Secure-Platform-for-Buying-Selling-Pre-Owned-Goods"
