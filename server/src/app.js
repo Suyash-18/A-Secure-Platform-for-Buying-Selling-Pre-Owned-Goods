@@ -21,6 +21,12 @@ app.use(express.static("public"))
 app.use(cookieParser())
 
 //write routes here 
+import userRouter from './routes/user.route.js'
+
+app.use("/api/v1/user",userRouter) 
+
+import productRoutes from "./routes/product.route.js";
+app.use("/api/products", productRoutes);
 
 app.get("/", (req, res) => {
     res.send("Server is running");
