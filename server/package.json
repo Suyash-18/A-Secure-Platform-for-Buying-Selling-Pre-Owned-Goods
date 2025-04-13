@@ -4,7 +4,6 @@
   "description": "basic backend server for our final project of \"A Secure Platform for Buying and Selling Pre-Owned Goods.\"",
   "main": "index.js",
   "type": "module",
-
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon src/index.js"
@@ -20,7 +19,10 @@
   },
   "homepage": "https://github.com/Suyash-18/A-Secure-Platform-for-Buying-Selling-Pre-Owned-Goods#readme",
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "mongoose": "^8.13.2"
   }
 }
