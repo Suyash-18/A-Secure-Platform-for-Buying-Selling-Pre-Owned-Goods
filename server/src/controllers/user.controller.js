@@ -115,6 +115,7 @@ const {AccessToken,RefreshToken} = await generateAccessAndRefreshTokens(user._id
   secure : true,
   sameSite:"strict"
  }
+ console.log("user logged in");
  return res.status(200)
  .cookie("AccessToken",AccessToken,option)
  .cookie("RefreshToken",RefreshToken,option)
