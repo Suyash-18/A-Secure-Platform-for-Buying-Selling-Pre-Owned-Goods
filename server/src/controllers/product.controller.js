@@ -88,20 +88,21 @@ export const deleteProduct = async (req, res) => {
     }
   };
   export const getProductsByUser = async (req, res) => {
-    try {
-      const userId = req.user._id; // assuming you're using middleware to attach user
-      const products = await Product.find({ seller: userId });
-  
-      res.status(200).json({
-        success: true,
-        message: "Fetched products by user",
-        products,
-      });
-    } catch (err) {
-      console.error("Get Products By User Error:", err);
-      res.status(500).json({ success: false, message: "Internal server error" });
-    }
-  };
+  try {
+    const userId = req.params.userId; // ✅ use from route param
+    const products = await Product.find({ seller: userId });
+
+    res.status(200).json({
+      success: true,
+      message: "Fetched products by user",
+      products,
+    });
+  } catch (err) {
+    console.error("Get Products By User Error:", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
   export const getSingleProduct = async (req, res) => {
     try {
       const { id } = req.params;
