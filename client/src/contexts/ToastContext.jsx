@@ -1,23 +1,37 @@
 import { createContext, useContext, useState } from "react";
+import Toast from "../components/Toaster";
 
 const ToastContext = createContext();
 
 export const ToastProvider = ({ children }) => {
   const [toast, setToast] = useState(null);
 
-  const showToast = (message) => {
-    setToast({ message });
-    setTimeout(() => setToast(null), 3000); // Hide after 3s
+  const showToast = ({ message, type = "success" }) => {
+    setToast({ message, type });
+  };
+
+  const hideToast = () => {
+    setToast(null);
   };
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      {toast && <div className="fixed top-4 right-4 z-50"><Toast message={toast.message} /></div>}
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={hideToast}
+        />
+      )}
     </ToastContext.Provider>
   );
 };
 
-export const useToast = () => useContext(ToastContext);
-
-import Toast from "../components/Toaster";
+export const useToast = () => {
+  const context = useContext(ToastContext);
+  if (!context) {
+    throw new Error("useToast must be used within a ToastProvider");
+  }
+  return context;
+};
