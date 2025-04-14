@@ -1,69 +1,54 @@
 // server/src/controllers/product.controller.js
 import { Product } from "../models/product.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
-
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import fs from "fs";
+import {asyncHandler} from "../utils/asyncHandler.js";
 
-export const createProduct = async (req, res) => {
-  try {
-    const {
-      title,
-      description,
-      price,
-      condition,
-      category,
-      status,
-      location,
-    } = req.body;
+export const createProduct = asyncHandler(async (req, res) => {
+  const { title, description, price, condition, category, location } = req.body;
+  const seller = req.user?._id; // comes from isAuthenticated middleware
 
-    // check for files
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: "Product images are required" });
+  if (!req.files || req.files.length === 0) {
+    throw new ApiError(400, "Product images are required");
+  }
+
+  let imageLinks = [];
+
+  for (let file of req.files) {
+    const uploadResult = await uploadOnCloudinary(file.path);
+    if (uploadResult?.url) {
+      imageLinks.push({
+        public_id: uploadResult.public_id,
+        url: uploadResult.url,
+      });
     }
 
-    const imageUploadPromises = req.files.map((file) =>
-        uploadOnCloudinary.uploader.upload(file.path, {
-        folder: "preowned/products",
-      })
-    );
-
-    const uploadedImages = await Promise.all(imageUploadPromises);
-
-    // Delete local temp files
-    req.files.forEach((file) => fs.unlinkSync(file.path));
-
-    const product = await Product.create({
-      title,
-      description,
-      price,
-      condition,
-      category,
-      status,
-      images: uploadedImages.map((img) => ({
-        public_id: img.public_id,
-        url: img.secure_url,
-      })),
-      location: {
-        ...location, // { address, city, state, country, coordinates }
-        coordinates: {
-          lat: parseFloat(location.coordinates.lat),
-          lng: parseFloat(location.coordinates.lng),
-        },
-      },
-      seller: req.user._id,
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "Product created successfully",
-      product,
-    });
-
-  } catch (err) {
-    console.error("Product Upload Error:", err);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    // 🔐 safe delete local file
+    try {
+      fs.unlinkSync(file.path);
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        console.error(`Error deleting temp file: ${file.path}`, err);
+      }
+    }
   }
-};
+
+  const product = await Product.create({
+    title,
+    description,
+    price,
+    condition,
+    category,
+    location: typeof location === "string" ? JSON.parse(location) : location,
+    seller,
+    images: imageLinks
+  });
+
+  return res.status(201).json(new ApiResponse(201, product, "Product created successfully"));
+});
+
 export const deleteProduct = async (req, res) => {
     try {
       const { id } = req.params;
