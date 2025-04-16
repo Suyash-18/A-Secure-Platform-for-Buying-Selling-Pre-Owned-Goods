@@ -1,6 +1,7 @@
-// src/routes/AppRouter.jsx
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useState } from "react";
+
 import Navbar from "../components/Navbar";
 import Home from "../pages/Home";
 import Products from "../pages/Products";
@@ -17,23 +18,36 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-const AppRouter = () => {
+const AppContent = () => {
+  const [darkMode, setDarkMode] = useState(false);
+  const toggleDarkMode = () => setDarkMode(!darkMode);
+
+  const location = useLocation();
+  const hideNavbarPaths = ["/login", "/signup"];
+
+  const shouldShowNavbar = !hideNavbarPaths.includes(location.pathname);
+
   return (
-    <BrowserRouter>
-      <Navbar />
+    <div className={`${darkMode ? "bg-[#121212] text-white" : "bg-[#F8F8FF] text-[#2E2E3A]"} min-h-screen`}>
+      {shouldShowNavbar && <Navbar toggleDarkMode={toggleDarkMode} darkMode={darkMode} />}
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Home darkMode={darkMode} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Register />} />
-        <Route path="/my-listings" element={<MyListings />} />
-        <Route path="/sell" element={<SellForm />} />
-        <Route path="/products/:id" element={<ProductDetails />} />
+        <Route path="/my-listings" element={<ProtectedRoute><MyListings /></ProtectedRoute>} />
+        <Route path="/sell" element={<ProtectedRoute><SellForm /></ProtectedRoute>} />
+        <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/products" element={<Products />} />
-        <Route path="/product/add" element={<AddProduct />} />
-
+        <Route path="/product/add" element={<ProtectedRoute><AddProduct /></ProtectedRoute>} />
       </Routes>
-    </BrowserRouter>
+    </div>
   );
 };
+
+const AppRouter = () => (
+  <BrowserRouter>
+    <AppContent />
+  </BrowserRouter>
+);
 
 export default AppRouter;

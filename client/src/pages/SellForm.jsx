@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 
 const SellForm = () => {
   const [formData, setFormData] = useState({
@@ -19,11 +20,37 @@ const SellForm = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    alert("Product listed successfully!");
+  
+    const data = new FormData();
+    data.append("title", formData.title);
+    data.append("description", formData.description);
+    data.append("price", formData.price);
+    data.append("location", formData.location);
+    data.append("category", formData.category);
+    data.append("image", formData.image);
+  
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/products/create",
+        data,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          withCredentials: true, // <-- This sends the auth token stored in cookies
+        }
+      );
+  
+      console.log("Product created:", response.data);
+      alert("Product listed successfully!");
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Failed to list product. Please try again.");
+    }
   };
+  
 
   return (
     <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded shadow">
