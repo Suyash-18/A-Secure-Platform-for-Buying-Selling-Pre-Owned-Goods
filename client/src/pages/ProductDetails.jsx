@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ProductContext } from "../context/productcontext";
+import { ProductContext } from "../contexts/ProductContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 

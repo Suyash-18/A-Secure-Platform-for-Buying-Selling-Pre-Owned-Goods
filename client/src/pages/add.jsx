@@ -1,6 +1,6 @@
 import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { ProductContext } from "../context/productcontext";
+import { ProductContext } from "../contexts/ProductContext";
 import { useToast } from "../contexts/ToastContext";
 
 const AddProduct = () => {
