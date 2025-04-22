@@ -1,16 +1,16 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useState } from "react";
-
 import Navbar from "../components/Navbar";
 import Home from "../pages/Home";
 import Products from "../pages/Products";
-import AddProduct from "../pages/add";
+import AddProduct from "../pages/AddProduct";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import MyListings from "../pages/MyListings";
 import SellForm from "../pages/SellForm";
 import ProductDetails from "../pages/ProductDetails";
+import Profile from "../pages/Profile";
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -34,6 +34,7 @@ const AppContent = () => {
         <Route path="/" element={<Home darkMode={darkMode} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Register />} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/my-listings" element={<ProtectedRoute><MyListings /></ProtectedRoute>} />
         <Route path="/sell" element={<ProtectedRoute><SellForm /></ProtectedRoute>} />
         <Route path="/product/:id" element={<ProductDetails />} />

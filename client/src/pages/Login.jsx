@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import Toaster from "../components/Toaster";
 
 const Login = () => {
-  const [credentials, setCredentials] = useState({ username: "", password: "" });
+  const [credentials, setCredentials] = useState({ email: "", password: "" });
   const { login } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
@@ -19,15 +19,18 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Send email and password for login
       const res = await axios.post("http://localhost:5000/api/v1/user/login", credentials, {
-        withCredentials: true,
+        withCredentials: true, // Ensure cookies are sent with request
       });
+
+      // On successful login, update user context and navigate
       login(res.data.data.user);
-      console.log(toString(res.message))
       setSuccess("Login successful");
       setTimeout(() => navigate("/"), 1000);
     } catch (err) {
-      setError(err.response?.data?.message || "Enter correct username and password.");
+      // Handle errors gracefully
+      setError(err.response?.data?.message || "Enter correct email and password.");
     }
   };
 
@@ -38,9 +41,9 @@ const Login = () => {
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-sm">
         <h2 className="text-2xl font-bold mb-6 text-[#9575cd]">Welcome Back</h2>
         <input
-          type="text"
-          name="username"
-          placeholder="Username or Email"
+          type="email"  // Change input type to email for validation
+          name="email"
+          placeholder="Email"
           className="w-full border border-[#9575cd] p-3 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-[#a680e9]"
           onChange={handleChange}
           required

@@ -18,10 +18,18 @@ const Navbar = ({ toggleDarkMode, darkMode }) => {
     navigate("/login");
   };
 
+  const handleSellClick = () => {
+    if (!user) {
+      navigate("/login");  // Redirect to login if not logged in
+    } else {
+      navigate("/sell");  // Navigate to sell page if logged in
+    }
+  };
+
   return (
     <nav className={`p-4 shadow-md flex items-center justify-between ${darkMode ? "bg-[#9575cd] text-white" : "bg-white text-slate-800"}`}>
       {/* Brand */}
-      <Link to="/" className={`text-2xl font-bold ${darkMode? "text-white" : "text-[#9575cd]"}`}>
+      <Link to="/" className={`text-2xl font-bold ${darkMode ? "text-white" : "text-[#9575cd]"}`}>
         Fresh Exchange
       </Link>
 
@@ -78,13 +86,13 @@ const Navbar = ({ toggleDarkMode, darkMode }) => {
         </Link>
 
         {/* Post Ad */}
-        <Link
-          to="/sell"
+        <button
+          onClick={handleSellClick}
           className="flex items-center gap-1 bg-[#9575cd] text-white px-3 py-1.5 rounded hover:bg-[#7e57c2]"
         >
           <FaPlusCircle />
           <span className="text-sm font-semibold">Sell</span>
-        </Link>
+        </button>
 
         {/* Profile / Auth */}
         {!user ? (
