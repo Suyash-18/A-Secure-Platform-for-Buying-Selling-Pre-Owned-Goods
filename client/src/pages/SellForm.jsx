@@ -95,7 +95,7 @@ const SellForm = () => {
 
       console.log("Created:", response.data);
       setSuccess("Product listed successfully!");      
-      setTimeout(() => navigate("/"), 1000); // Redirect after success
+      setTimeout(() => navigate("/"), 2000); // Redirect after success
     } catch (error) {
       console.error("Error submitting form:", error);
       setError(error.response?.data?.message || "Failed to list product. Please try again.");
