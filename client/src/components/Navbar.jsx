@@ -27,15 +27,23 @@ const Navbar = ({ toggleDarkMode, darkMode }) => {
 
       {/* Location Selector */}
       <select
-        value={location}
-        onChange={(e) => setLocation(e.target.value)}
-        className="border px-2 py-1 rounded ml-4 text-sm focus:outline-none bg-transparent"
-      >
-        <option>India</option>
-        <option>USA</option>
-        <option>Germany</option>
-        <option>France</option>
-      </select>
+  value={location}
+  onChange={(e) => setLocation(e.target.value)}
+  className="border px-2 py-1 rounded ml-4 text-sm focus:outline-none bg-transparent"
+>
+  <option value="">Select City</option>
+  <option value="Mumbai">Mumbai</option>
+  <option value="Delhi">Delhi</option>
+  <option value="Bangalore">Bangalore</option>
+  <option value="Hyderabad">Hyderabad</option>
+  <option value="Chennai">Chennai</option>
+  <option value="Kolkata">Kolkata</option>
+  <option value="Pune">Pune</option>
+  <option value="Ahmedabad">Ahmedabad</option>
+  <option value="Jaipur">Jaipur</option>
+  <option value="Lucknow">Lucknow</option>
+</select>
+
 
       {/* Search Bar */}
       <div className="flex flex-1 mx-6 items-center border rounded overflow-hidden bg-transparent">

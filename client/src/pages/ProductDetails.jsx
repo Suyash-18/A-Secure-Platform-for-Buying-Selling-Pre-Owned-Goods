@@ -18,7 +18,7 @@ const ProductDetails = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/products/67ff421443a91134deadaaa1`);
+        const res = await axios.get(`http://localhost:5000/api/products/${id}`);
         if (res.data?.success) {
           setProduct(res.data.product);
         } else {

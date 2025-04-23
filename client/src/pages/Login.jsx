@@ -1,4 +1,3 @@
-// src/pages/Login.jsx
 import { useState } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
@@ -23,7 +22,7 @@ const Login = () => {
         withCredentials: true,
       });
       login(res.data.data.user);
-      console.log(toString(res.message))
+      console.log(res.message); // Removed toString()
       setSuccess("Login successful");
       setTimeout(() => navigate("/"), 1000);
     } catch (err) {
