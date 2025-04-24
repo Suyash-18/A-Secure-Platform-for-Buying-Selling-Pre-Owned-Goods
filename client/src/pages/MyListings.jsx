@@ -1,67 +1,65 @@
-import React from "react";
-import { FaEdit, FaTrash } from "react-icons/fa";
-
-const sampleListings = [
-  {
-    id: 1,
-    title: "Used iPhone 12",
-    price: "₹35,000",
-    location: "Mumbai",
-    image:
-      "https://images.unsplash.com/photo-1611186871348-b1ce696e52a7?auto=format&fit=crop&w=600&q=60",
-  },
-  {
-    id: 2,
-    title: "Study Table",
-    price: "₹2,000",
-    location: "Pune",
-    image:
-      "https://images.unsplash.com/photo-1616627454049-69ba9f46e8fa?auto=format&fit=crop&w=600&q=60",
-  },
-  {
-    id: 3,
-    title: "Mountain Bike",
-    price: "₹12,500",
-    location: "Nagpur",
-    image:
-      "https://images.unsplash.com/photo-1509395176047-4a66953fd231?auto=format&fit=crop&w=600&q=60",
-  },
-];
+import { useEffect, useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { Link, useNavigate } from "react-router-dom";
 
 const MyListings = () => {
-  return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">My Listings</h1>
+  const { user } = useAuth();
+  const [myProducts, setMyProducts] = useState([]);
+  const navigate = useNavigate(); // Hook for programmatic navigation
 
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {sampleListings.map((item) => (
-          <div
-            key={item.id}
-            className="bg-white shadow rounded-md overflow-hidden transition hover:shadow-lg"
-          >
-            <img
-              src={item.image}
-              alt={item.title}
-              className="h-48 w-full object-cover"
-            />
-            <div className="p-4">
-              <h2 className="text-lg font-semibold text-gray-800">
-                {item.title}
-              </h2>
-              <p className="text-purple-700 font-medium">{item.price}</p>
-              <p className="text-sm text-gray-500">{item.location}</p>
-              <div className="flex justify-end gap-3 mt-3">
-                <button className="text-blue-500 hover:text-blue-700">
-                  <FaEdit />
-                </button>
-                <button className="text-red-500 hover:text-red-700">
-                  <FaTrash />
-                </button>
-              </div>
+  useEffect(() => {
+    const fetchMyProducts = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/products/user/${user._id}`);
+        const data = await res.json();
+        setMyProducts(data.products);
+      } catch (err) {
+        console.error("Failed to fetch listings:", err);
+      }
+    };
+
+    if (user?._id) {
+      fetchMyProducts();
+    }
+  }, [user]);
+
+  const handleProductClick = (productId) => {
+    navigate(`/product/${productId}`);
+  };
+
+  return (
+    <div className="p-6 min-h-screen bg-[#f9faf9]">
+      <h2 className="text-3xl font-bold text-[#9575cd] mb-6">My Listings</h2>
+
+      {myProducts.length === 0 ? (
+        <p className="text-slate-600">You haven't listed any products yet.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {myProducts.map((product) => (
+            <div
+              key={product._id}
+              className="bg-white rounded-2xl shadow-md p-4 flex flex-col cursor-pointer" // Added cursor-pointer for visual feedback
+              onClick={() => handleProductClick(product._id)} // Added onClick handler
+            >
+              <img
+                src={product.images?.[0]?.url || 'https://via.placeholder.com/400?text=No+Image'}
+                alt={product.title}
+                className="w-full h-48 object-cover rounded-lg mb-4"
+              />
+
+              <h3 className="text-lg font-semibold text-[#37474F]">{product.title}</h3>
+              <p className="text-sm text-gray-500 mb-2">{product.condition}</p>
+              <p className="text-xl font-bold text-[#9575cd] mb-4">₹{product.price}</p>
+              <Link
+                to={`/edit-product/${product._id}`}
+                className="mt-auto bg-[#9575cd] hover:bg-[#7e57c2] text-white text-sm py-2 rounded text-center"
+              >
+                Edit Listing
+              </Link>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

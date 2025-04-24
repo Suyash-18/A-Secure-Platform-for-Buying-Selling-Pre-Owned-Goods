@@ -10,6 +10,7 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import MyListings from "../pages/MyListings";
 import SellForm from "../pages/SellForm";
+import Profile from "../pages/Profile";
 import ProductDetails from "../pages/ProductDetails";
 
 const ProtectedRoute = ({ children }) => {
@@ -35,6 +36,7 @@ const AppContent = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Register />} />
         <Route path="/my-listings" element={<ProtectedRoute><MyListings /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/sell" element={<ProtectedRoute><SellForm /></ProtectedRoute>} />
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/products" element={<Products />} />
