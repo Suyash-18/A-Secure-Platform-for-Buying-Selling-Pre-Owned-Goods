@@ -26,7 +26,20 @@ const Login = () => {
       setSuccess("Login successful");
       setTimeout(() => navigate("/"), 1000);
     } catch (err) {
-      setError(err.response?.data?.message || "Enter correct username and password.");
+      const html = err?.response?.data;
+      let message = "Something went wrong.";
+
+      // Try to extract message from <pre> tag if it's HTML
+      if (typeof html === "string" && html.includes("<pre>")) {
+        const matches = html.match(/<pre>(.*?)<\/pre>/s);
+        if (matches && matches[1]) {
+          message = matches[1].split("<br>")[0].replace("Error:", "").trim(); // Extract only the first error line
+        }
+      } else if (err?.response?.data?.message) {
+        message = err.response.data.message; // standard JSON error
+    }
+
+    setError(message); // or display it however you're doing now
     }
   };
 
@@ -58,6 +71,12 @@ const Login = () => {
         >
           Login
         </button>
+        <p className="mt-4 text-center text-gray-600">
+          Don't have an account?{" "}
+          <a href="/signup" className="text-[#9575cd] font-semibold hover:underline">
+            Register here
+          </a>
+        </p>
       </form>
     </div>
   );

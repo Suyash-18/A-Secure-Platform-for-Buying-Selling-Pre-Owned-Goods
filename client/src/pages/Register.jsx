@@ -41,7 +41,7 @@ const Register = () => {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/v1/user/register", data, {
+        let res = await axios.post("http://localhost:5000/api/v1/user/register", data, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -51,7 +51,20 @@ const Register = () => {
       setSuccess("Registered successfully!");
       setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
-      setError(err.response?.data?.message || "Something went wrong.");
+      const html = err?.response?.data;
+      let message = "Something went wrong.";
+
+      // Try to extract message from <pre> tag if it's HTML
+      if (typeof html === "string" && html.includes("<pre>")) {
+        const matches = html.match(/<pre>(.*?)<\/pre>/s);
+        if (matches && matches[1]) {
+          message = matches[1].split("<br>")[0].replace("Error:", "").trim(); // Extract only the first error line
+        }
+      } else if (err?.response?.data?.message) {
+        message = err.response.data.message; // standard JSON error
+    }
+
+    setError(message); // or display it however you're doing now
     }
   };
 
@@ -120,6 +133,12 @@ const Register = () => {
         >
           Sign Up
         </button>
+        <p className="mt-4 text-center text-gray-600">
+          Already have an account?{" "}
+          <a href="/login" className="text-[#9575cd] font-semibold hover:underline">
+            Login here
+          </a>
+          </p>
       </form>
     </div>
   );
