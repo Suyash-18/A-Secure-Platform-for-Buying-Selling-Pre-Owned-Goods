@@ -5,9 +5,11 @@ const Home = ({ darkMode }) => {
   return (
     <div>
       {/* Hero Section */}
-      <div className="p-6 text-center">
-        <h1 className="text-3xl font-semibold mb-4">Welcome to Fresh Exchange</h1>
-        <p className="text-lg mb-6">
+      <div className="p-6 text-center bg-[#faf4fd]">
+        <h1 className="text-4xl font-bold text-center mt-6 text-[#37474F] mb-2">
+          Welcome to Fresh Exchange
+        </h1>
+        <p className="text-center text-[#37474F] mb-10 text-lg">
           Find or sell second-hand goods with ease and trust.
         </p>
       </div>
