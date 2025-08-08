@@ -31,3 +31,4 @@ router.delete("/delete/:id", isAuthenticated, deleteProduct);
 router.get("/user/:userId", getProductsByUser);
 
 export default router;
+
