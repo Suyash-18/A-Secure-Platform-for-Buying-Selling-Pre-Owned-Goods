@@ -1,9 +1,10 @@
 // src/pages/ProductDetails.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
+import { motion } from "framer-motion";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -14,6 +15,11 @@ const ProductDetails = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [mainImage, setMainImage] = useState("");
+  const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const chatEndRef = useRef(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -21,112 +27,194 @@ const ProductDetails = () => {
         const res = await axios.get(`http://localhost:5000/api/products/${id}`);
         if (res.data?.success) {
           setProduct(res.data.product);
+          setMainImage(res.data.product.images?.[0]?.url || "");
         } else {
           setError("Product not found.");
         }
       } catch (err) {
-        console.error("Error fetching product:", err);
         setError("An error occurred while fetching the product.");
       } finally {
         setLoading(false);
       }
     };
-
     fetchProduct();
   }, [id]);
 
-  const handleContact = () => {
-    if (!user) {
-      showToast({ message: "Please login to contact the seller", type: "error" });
-      navigate('/login');
-      return;
-    }
-    // Add your contact logic here
-    showToast({ message: "Contact request sent!", type: "success" });
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSendMessage = () => {
+    if (!input.trim()) return;
+
+    const newMessage = { sender: "user", text: input };
+    setMessages((prev) => [...prev, newMessage]);
+    setInput("");
+
+    // Auto-reply from seller
+    setTimeout(() => {
+      const reply = {
+        sender: "seller",
+        text: "Thanks for reaching out! I’ll get back to you shortly.",
+      };
+      setMessages((prev) => [...prev, reply]);
+    }, 1000);
   };
 
-  if (loading) {
+  if (loading) return <p className="text-center py-20">Loading product...</p>;
+  if (error || !product)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-xl text-[#9575cd]">Loading product...</p>
+      <div className="text-center py-20">
+        <h2>{error || "Product not found"}</h2>
+        <button
+          onClick={() => navigate("/products")}
+          className="mt-4 bg-purple-600 text-white px-6 py-2 rounded-lg shadow hover:bg-purple-700 transition"
+        >
+          Back to Products
+        </button>
       </div>
     );
-  }
-
-  if (error || !product) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800">{error || "Product not found"}</h2>
-          <button
-            onClick={() => navigate('/products')}
-            className="mt-4 bg-[#9575cd] text-white px-6 py-2 rounded hover:bg-[#7e57c2]"
-          >
-            Back to Products
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-[#f9faf9] p-8">
-      <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="flex flex-col md:flex-row">
-          <div className="md:w-1/2">
-            <img
-              src={product.images?.[0]?.url || 'https://via.placeholder.com/400?text=No+Image'}
-              alt={product.title}
-              className="w-full h-[400px] object-cover"
-              onError={(e) => {
-                e.target.src = 'https://via.placeholder.com/400?text=Image+Not+Found';
-              }}
-            />
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden p-8 space-y-12">
+        
+        {/* -------- TOP SECTION -------- */}
+        <div className="flex flex-col lg:flex-row gap-10">
+          {/* Left: Product Images */}
+         {/* Left: Product Images */}
+<div className="lg:w-2/3 flex flex-col items-center">
+  <div className="rounded-xl overflow-hidden shadow-lg max-w-md w-full">
+    <img
+      src={mainImage || "https://via.placeholder.com/400?text=No+Image"}
+      alt={product.title}
+      className="w-full h-[280px] object-cover"
+    />
+  </div>
+  {/* Thumbnails */}
+  <div className="flex space-x-3 mt-4 overflow-x-auto pb-2">
+    {product.images?.map((img, i) => (
+      <img
+        key={i}
+        src={img.url}
+        alt="thumbnail"
+        onClick={() => setMainImage(img.url)}
+        className={`w-20 h-20 object-cover border-2 rounded-lg cursor-pointer transition-transform 
+        ${mainImage === img.url ? "border-purple-600 scale-110" : "border-gray-200 hover:border-purple-400 hover:scale-105"}`}
+      />
+    ))}
+  </div>
+</div>
+
+
+          {/* Right: Chat Box */}
+          <div className="lg:w-1/3 bg-gray-50 rounded-2xl p-6 shadow-inner flex flex-col border border-gray-200">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Chat with Seller</h2>
+
+            {!chatOpen ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ repeat: Infinity, repeatType: "reverse", duration: 2 }}
+                className="flex-1 flex items-center justify-center text-gray-500 italic"
+              >
+                Start Chat with Seller 💬
+              </motion.div>
+            ) : (
+              <div className="flex-1 flex flex-col space-y-3 overflow-y-auto p-3 bg-white rounded-lg border">
+                {messages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`p-3 rounded-xl text-sm max-w-[75%] shadow-sm ${
+                      msg.sender === "user"
+                        ? "bg-purple-600 text-white self-end rounded-br-none"
+                        : "bg-gray-200 text-gray-800 self-start rounded-bl-none"
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
+            )}
+
+            {!chatOpen ? (
+              <button
+                onClick={() => {
+                  if (!user) {
+                    showToast({ message: "Please login to chat", type: "error" });
+                    navigate("/login");
+                    return;
+                  }
+                  setChatOpen(true);
+                  showToast({ message: "Chat started!", type: "success" });
+                }}
+                className="mt-4 bg-purple-600 text-white py-3 rounded-lg shadow hover:bg-purple-700 transition"
+              >
+                Start Chat
+              </button>
+            ) : (
+              <div className="mt-4 flex space-x-2">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Type your message..."
+                  className="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <button
+                  onClick={handleSendMessage}
+                  className="bg-purple-600 text-white px-5 rounded-lg shadow hover:bg-purple-700 transition"
+                >
+                  Send
+                </button>
+              </div>
+            )}
           </div>
-          
-          <div className="md:w-1/2 p-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-4">{product.title}</h1>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-[#9575cd]">₹ {product.price}</span>
-                <span className="text-gray-600">{product.location?.city || "Unknown Location"}</span>
-              </div>
-              
-              <div className="border-t border-b py-4">
-                <h2 className="text-xl font-semibold mb-2">Description</h2>
-                <p className="text-gray-600">
-                  {product.description || "No description available"}
-                </p>
-              </div>
+        </div>
 
-              <div className="space-y-2">
-                <h2 className="text-xl font-semibold">Details</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-gray-600">Condition:</span>
-                    <span className="ml-2 font-medium">{product.condition || "Used"}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Category:</span>
-                    <span className="ml-2 font-medium">{product.category || "General"}</span>
-                  </div>
-                </div>
-              </div>
+        {/* -------- BOTTOM SECTION -------- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          {/* Bottom Left: Product Description */}
+          <div className="space-y-6">
+            <h1 className="text-3xl font-bold text-gray-800">{product.title}</h1>
+            <p className="text-2xl text-purple-600 font-semibold">₹ {product.price}</p>
+            <p className="text-gray-500">{product.location?.city || "Unknown Location"}</p>
 
-              <div className="flex space-x-4 pt-6">
-                <button
-                  onClick={handleContact}
-                  className="flex-1 bg-[#9575cd] text-white py-3 px-6 rounded-lg hover:bg-[#7e57c2] transition-colors"
-                >
-                  Contact Seller
-                </button>
-                <button
-                  onClick={() => navigate('/products')}
-                  className="px-6 py-3 border border-[#9575cd] text-[#9575cd] rounded-lg hover:bg-[#9575cd] hover:text-white transition-colors"
-                >
-                  Back to Products
-                </button>
-              </div>
+            <div className="border-t pt-4">
+              <h2 className="text-lg font-semibold mb-2 text-gray-800">Description</h2>
+              <p className="text-gray-600 leading-relaxed">{product.description || "No description available"}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 border-t pt-4 text-gray-700">
+              <p><span className="font-medium">Condition:</span> {product.condition}</p>
+              <p><span className="font-medium">Category:</span> {product.category}</p>
+            </div>
+
+            <div className="border-t pt-4">
+              <h2 className="text-lg font-semibold mb-2 text-gray-800">Proof & Accessories</h2>
+              <ul className="list-disc list-inside text-gray-600 space-y-1">
+                <li>Bill: {product.billAvailable ? "Available" : "Not Available"}</li>
+                <li>Warranty: {product.warranty ? "Available" : "Not Available"}</li>
+                <li>Accessories: {product.accessories || "Not Mentioned"}</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Right: Map */}
+          <div>
+            <h2 className="text-lg font-semibold mb-3 text-gray-800">Location</h2>
+            <div className="rounded-xl overflow-hidden shadow">
+              <iframe
+                title="map"
+                width="100%"
+                height="320"
+                loading="lazy"
+                allowFullScreen
+                src={`https://www.google.com/maps?q=${encodeURIComponent(
+                  product.location?.city || "India"
+                )}&output=embed`}
+              ></iframe>
             </div>
           </div>
         </div>
