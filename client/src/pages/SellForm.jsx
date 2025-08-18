@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
 import Toaster from "../components/Toaster";
-import { useNavigate } from "react-router-dom"; // Add navigate for redirection
+import { useNavigate } from "react-router-dom";
 
 const SellForm = () => {
-  const navigate = useNavigate(); // For redirect after successful form submission
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -24,8 +24,8 @@ const SellForm = () => {
     images: [],
   });
 
-  const [error, setError] = useState(""); // Move error and success states outside handleSubmit
-  const [success, setSuccess] = useState(""); 
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -43,8 +43,21 @@ const SellForm = () => {
     }
   };
 
+  // ✅ Append images instead of replacing
   const handleImageChange = (e) => {
-    setFormData({ ...formData, images: Array.from(e.target.files) });
+    const newFiles = Array.from(e.target.files);
+    setFormData((prev) => ({
+      ...prev,
+      images: [...prev.images, ...newFiles],
+    }));
+  };
+
+  // ✅ Remove image by index
+  const removeImage = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
   };
 
   const fetchCoordinates = async () => {
@@ -55,11 +68,12 @@ const SellForm = () => {
         state: formData.location.state,
         country: formData.location.country,
       });
-
       return res.data.coordinates;
     } catch (error) {
       console.error("Failed to fetch coordinates:", error);
-      throw new Error("Could not fetch coordinates. Please check the location fields.");
+      throw new Error(
+        "Could not fetch coordinates. Please check the location fields."
+      );
     }
   };
 
@@ -86,27 +100,43 @@ const SellForm = () => {
         data.append("images", img);
       });
 
-      const response = await axios.post("http://localhost:5000/api/products/create", data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        withCredentials: true,
-      });
+      const response = await axios.post(
+        "http://localhost:5000/api/products/create",
+        data,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
+        }
+      );
 
       console.log("Created:", response.data);
-      setSuccess("Product listed successfully!");      
-      setTimeout(() => navigate("/"), 2000); // Redirect after success
+      setSuccess("Product listed successfully!");
+      setTimeout(() => navigate("/"), 2000);
     } catch (error) {
       console.error("Error submitting form:", error);
-      setError(error.response?.data?.message || "Failed to list product. Please try again.");
+      setError(
+        error.response?.data?.message ||
+          "Failed to list product. Please try again."
+      );
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded shadow">
-      {error && <Toaster message={error} onClose={() => setError("")} type="error" />}
-      {success && <Toaster message={success} onClose={() => setSuccess("")} type="success" />}
-      <h2 className="text-2xl font-bold mb-6 text-purple-700">Sell Your Item</h2>
+      {error && (
+        <Toaster message={error} onClose={() => setError("")} type="error" />
+      )}
+      {success && (
+        <Toaster
+          message={success}
+          onClose={() => setSuccess("")}
+          type="success"
+        />
+      )}
+      <h2 className="text-2xl font-bold mb-6 text-purple-700">
+        Sell Your Item
+      </h2>
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
@@ -135,6 +165,7 @@ const SellForm = () => {
           className="w-full border px-4 py-2 rounded"
         />
 
+        {/* Location */}
         <div className="grid grid-cols-2 gap-3">
           <input
             type="text"
@@ -174,6 +205,7 @@ const SellForm = () => {
           />
         </div>
 
+        {/* Category */}
         <select
           name="category"
           value={formData.category}
@@ -189,6 +221,7 @@ const SellForm = () => {
           <option value="Other">Other</option>
         </select>
 
+        {/* Condition */}
         <select
           name="condition"
           value={formData.condition}
@@ -202,6 +235,7 @@ const SellForm = () => {
           <option value="Used">Used</option>
         </select>
 
+        {/* Image Upload */}
         <div>
           <label className="block font-medium mb-1">Upload Images</label>
           <label className="border-dashed border-2 border-purple-500 w-full h-32 rounded flex items-center justify-center cursor-pointer text-purple-600">
@@ -215,15 +249,24 @@ const SellForm = () => {
             />
             <span className="text-3xl">+</span>
           </label>
+
           {formData.images.length > 0 && (
             <div className="grid grid-cols-3 gap-3 mt-4">
               {formData.images.map((file, index) => (
-                <div key={index} className="relative">
+                <div key={index} className="relative group">
                   <img
                     src={URL.createObjectURL(file)}
                     alt={`Preview ${index}`}
                     className="h-32 w-full object-cover rounded shadow"
                   />
+                  {/* Remove button */}
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full px-2 opacity-0 group-hover:opacity-100 transition"
+                  >
+                    ×
+                  </button>
                   <p className="text-xs mt-1 truncate">{file.name}</p>
                 </div>
               ))}
