@@ -182,7 +182,8 @@ const ProductDetails = () => {
 
             {/* ✅ Dynamic Payment Button */}
             <div className="mt-4">
-              <CheckoutButton amount={product.price} />
+              <CheckoutButton amount={product.price} productId={product._id} />
+
             </div>
 
             <p className="text-gray-500">{product.location?.city || "Unknown Location"}</p>

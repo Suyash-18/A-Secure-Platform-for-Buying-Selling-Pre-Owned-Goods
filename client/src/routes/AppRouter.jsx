@@ -1,4 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useState } from "react";
 
@@ -12,6 +18,8 @@ import MyListings from "../pages/MyListings";
 import SellForm from "../pages/SellForm";
 import Profile from "../pages/Profile";
 import ProductDetails from "../pages/ProductDetails";
+import PaymentSuccess from "../pages/PaymentSuccess";
+import PaymentFailed from "../pages/PaymentFailed";
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -29,18 +37,55 @@ const AppContent = () => {
   const shouldShowNavbar = !hideNavbarPaths.includes(location.pathname);
 
   return (
-    <div className={`${darkMode ? "bg-[#121212] text-white" : "bg-[#F8F8FF] text-[#2E2E3A]"} min-h-screen`}>
-      {shouldShowNavbar && <Navbar toggleDarkMode={toggleDarkMode} darkMode={darkMode} />}
+    <div
+      className={`${
+        darkMode ? "bg-[#121212] text-white" : "bg-[#F8F8FF] text-[#2E2E3A]"
+      } min-h-screen`}
+    >
+      {shouldShowNavbar && (
+        <Navbar toggleDarkMode={toggleDarkMode} darkMode={darkMode} />
+      )}
       <Routes>
         <Route path="/" element={<Home darkMode={darkMode} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Register />} />
-        <Route path="/my-listings" element={<ProtectedRoute><MyListings /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/sell" element={<ProtectedRoute><SellForm /></ProtectedRoute>} />
+        <Route
+          path="/my-listings"
+          element={
+            <ProtectedRoute>
+              <MyListings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sell"
+          element={
+            <ProtectedRoute>
+              <SellForm />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/products" element={<Products />} />
-        <Route path="/product/add" element={<ProtectedRoute><AddProduct /></ProtectedRoute>} />
+        <Route
+          path="/product/add"
+          element={
+            <ProtectedRoute>
+              <AddProduct />
+            </ProtectedRoute>
+          }
+        />
+        // in your React Router config
+        <Route path="/payment-success/:orderId" element={<PaymentSuccess />} />
+        <Route path="/payment-failed" element={<PaymentFailed />} />
       </Routes>
     </div>
   );
