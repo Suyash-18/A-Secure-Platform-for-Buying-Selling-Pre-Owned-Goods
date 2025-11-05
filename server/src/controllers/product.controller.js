@@ -20,7 +20,7 @@ export const createProduct = asyncHandler(async (req, res) => {
   const seller = req.user?._id;
   let location = JSON.parse(req.body.location);
 
-  // ✅ Check for minimum 3 images
+  // ✅ Check minimum 3 images
   if (!req.files || !req.files.images || req.files.images.length < 3) {
     throw new ApiError(400, "Minimum 3 product images are required");
   }
@@ -32,31 +32,29 @@ export const createProduct = asyncHandler(async (req, res) => {
   const imageLinks = [];
   for (let file of req.files.images) {
     const uploaded = await uploadOnCloudinary(file.path);
-    if (uploaded.url) {
-      imageLinks.push({ public_id: uploaded.public_id, url: uploaded.url });
-    }
-
-    // ✅ Safe delete temp file
-    if (file.path && fs.existsSync(file.path)) {
-      fs.unlinkSync(file.path);
+    if (uploaded && uploaded.url) {
+      imageLinks.push({
+        public_id: uploaded.public_id,
+        url: uploaded.url,
+      });
     }
   }
 
-  // ✅ Upload bill/invoice images (optional)
+  // ✅ Upload Bills (optional)
   const billLinks = [];
   if (req.files.bills) {
     for (let file of req.files.bills) {
       const uploaded = await uploadOnCloudinary(file.path);
-      if (uploaded.url) {
-        billLinks.push({ public_id: uploaded.public_id, url: uploaded.url });
-      }
-      if (file.path && fs.existsSync(file.path)) {
-        fs.unlinkSync(file.path);
+      if (uploaded && uploaded.url) {
+        billLinks.push({
+          public_id: uploaded.public_id,
+          url: uploaded.url,
+        });
       }
     }
   }
 
-  // ✅ Save product to DB
+  // ✅ Save product successfully
   const product = await Product.create({
     title,
     description,
@@ -75,6 +73,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, product, "Product created successfully"));
 });
+
 
 export const deleteProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;

@@ -1,9 +1,8 @@
+// server/src/utils/cloudinary.js
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import dotenv from "dotenv";
 dotenv.config();
-
-
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -11,7 +10,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const uploadOnCloudinary = async (localFilePath) => {
+// ✅ Upload file to Cloudinary & delete from server after upload
+export const uploadOnCloudinary = async (localFilePath) => {
   try {
     if (!localFilePath) return null;
 
@@ -19,23 +19,24 @@ const uploadOnCloudinary = async (localFilePath) => {
       resource_type: "auto",
     });
 
-
-    // ✅ Delete the local file after successful upload
-     fs.unlinkSync(localFilePath);
+    // ✅ Delete temp file after successful upload
+    if (fs.existsSync(localFilePath)) {
+      fs.unlinkSync(localFilePath);
+    }
 
     return response;
   } catch (error) {
     console.error("Cloudinary Upload Error:", error);
 
-    // ✅ Ensure the file is removed even if upload fails
-    try {
-      await fs.unlink(localFilePath);
-    } catch (err) {
-      console.error("File deletion error:", err);
+    // ✅ Delete file even if upload fails (avoid temp folder clutter)
+    if (localFilePath && fs.existsSync(localFilePath)) {
+      try {
+        fs.unlinkSync(localFilePath);
+      } catch (err) {
+        console.error("Temp file deletion error:", err);
+      }
     }
 
     return null;
   }
 };
-
-export { uploadOnCloudinary };

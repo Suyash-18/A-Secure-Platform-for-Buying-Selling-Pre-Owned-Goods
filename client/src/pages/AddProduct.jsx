@@ -114,6 +114,57 @@ export default function AddProduct() {
   const removeBill = (idx) => {
     setBills((prev) => prev.filter((_, i) => i !== idx));
   };
+  const [isLocating, setIsLocating] = useState(false);
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      showToast({
+        message: "Geolocation not supported by your browser",
+        type: "error",
+      });
+      return;
+    }
+
+    setIsLocating(true); // start loading
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await res.json();
+
+          setProduct((prev) => ({
+            ...prev,
+            location: {
+              address: data.address.road || data.display_name || "",
+              city:
+                data.address.city ||
+                data.address.town ||
+                data.address.village ||
+                "",
+              state: data.address.state || "",
+              country: data.address.country || "",
+            },
+          }));
+          showToast({
+            message: "✅ Location filled successfully!",
+            type: "success",
+          });
+        } catch (error) {
+          showToast({ message: "❌ Failed to fetch address!", type: "error" });
+        } finally {
+          setIsLocating(false); // stop loading
+        }
+      },
+      () => {
+        showToast({ message: "❌ Location permission denied!", type: "error" });
+        setIsLocating(false);
+      }
+    );
+  };
 
   const isFormValid = useMemo(() => {
     const { title, description, price, category, condition, location } =
@@ -301,6 +352,46 @@ export default function AddProduct() {
                 required
               />
             </div>
+
+            {/* ✅ New button added below */}
+            <button
+              type="button"
+              onClick={getCurrentLocation}
+              disabled={isLocating}
+              className={`mt-3 px-4 py-2 flex items-center gap-2 text-sm rounded 
+    ${
+      isLocating
+        ? "bg-gray-400 cursor-not-allowed"
+        : "bg-purple-600 hover:bg-purple-700 text-white"
+    }`}
+            >
+              {isLocating ? (
+                <>
+                  <svg
+                    className="w-4 h-4 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="white"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="white"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
+                  </svg>
+                  Detecting...
+                </>
+              ) : (
+                <>📍 Use My Current Location</>
+              )}
+            </button>
           </Section>
 
           {/* Section: Additional Info */}
@@ -541,6 +632,53 @@ function DropZone({
     onFilesSelect(e.target.files);
     // reset input so same file can be selected again if needed
     e.target.value = "";
+  };
+  // Get user's current geolocation & auto-fill the address fields
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      showToast({
+        message: "Geolocation is not supported by your browser",
+        type: "error",
+      });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await res.json();
+
+          setProduct((prev) => ({
+            ...prev,
+            location: {
+              address: data.address.road || data.display_name || "",
+              city:
+                data.address.city ||
+                data.address.town ||
+                data.address.village ||
+                "",
+              state: data.address.state || "",
+              country: data.address.country || "",
+            },
+          }));
+
+          showToast({
+            message: "Location detected successfully!",
+            type: "success",
+          });
+        } catch (err) {
+          showToast({ message: "Unable to detect location", type: "error" });
+        }
+      },
+      () => {
+        showToast({ message: "Location access denied", type: "error" });
+      }
+    );
   };
 
   return (
