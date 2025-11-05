@@ -7,68 +7,82 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { getCoordinatesFromAddress } from "../utils/geocodeLocation.js";
 
 export const createProduct = asyncHandler(async (req, res) => {
-  const { title, description, price, condition, category } = req.body;
+  const {
+    title,
+    description,
+    price,
+    condition,
+    category,
+    warranty,
+    accessories,
+  } = req.body;
+
   const seller = req.user?._id;
+  let location = JSON.parse(req.body.location);
 
-  let location = req.body.location;
-
-  if (!req.files || req.files.length === 0) {
-    throw new ApiError(400, "Product images are required");
+  // ✅ Check for minimum 3 images
+  if (!req.files || !req.files.images || req.files.images.length < 3) {
+    throw new ApiError(400, "Minimum 3 product images are required");
   }
 
-  // Parse location if it's a JSON string
-  location = typeof location === "string" ? JSON.parse(location) : location;
-
-  if (!location?.address || !location.city || !location.state || !location.country) {
-    throw new ApiError(400, "Incomplete location details");
-  }
-
-  // 🌍 Fetch coordinates
+  // ✅ Get coordinates from address
   const coordinates = await getCoordinatesFromAddress(location);
 
-  let imageLinks = [];
-
-  for (let file of req.files) {
-    const uploadResult = await uploadOnCloudinary(file.path);
-    if (uploadResult?.url) {
-      imageLinks.push({
-        public_id: uploadResult.public_id,
-        url: uploadResult.url,
-      });
+  // ✅ Upload product images
+  const imageLinks = [];
+  for (let file of req.files.images) {
+    const uploaded = await uploadOnCloudinary(file.path);
+    if (uploaded.url) {
+      imageLinks.push({ public_id: uploaded.public_id, url: uploaded.url });
     }
 
-    // 🔐 Safe delete of temp file
-    try {
+    // ✅ Safe delete temp file
+    if (file.path && fs.existsSync(file.path)) {
       fs.unlinkSync(file.path);
-    } catch (err) {
-      if (err.code !== "ENOENT") {
-        console.error(`Error deleting temp file: ${file.path}`, err);
+    }
+  }
+
+  // ✅ Upload bill/invoice images (optional)
+  const billLinks = [];
+  if (req.files.bills) {
+    for (let file of req.files.bills) {
+      const uploaded = await uploadOnCloudinary(file.path);
+      if (uploaded.url) {
+        billLinks.push({ public_id: uploaded.public_id, url: uploaded.url });
+      }
+      if (file.path && fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
       }
     }
   }
 
+  // ✅ Save product to DB
   const product = await Product.create({
     title,
     description,
     price,
     condition,
     category,
-    location: {
-      ...location,
-      coordinates,
-    },
     seller,
+    warranty,
+    accessories,
+    location: { ...location, coordinates },
     images: imageLinks,
+    bills: billLinks,
   });
 
-  return res.status(201).json(new ApiResponse(201, product, "Product created successfully"));
+  return res
+    .status(201)
+    .json(new ApiResponse(201, product, "Product created successfully"));
 });
 
 export const deleteProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const product = await Product.findById(id);
   if (!product) {
-    return res.status(404).json({ success: false, message: "Product not found" });
+    return res
+      .status(404)
+      .json({ success: false, message: "Product not found" });
   }
 
   if (req.user._id.toString() !== product.seller.toString()) {
@@ -103,7 +117,6 @@ export const getAllProducts = asyncHandler(async (req, res) => {
     products,
   });
 });
-
 
 export const getProductsByUser = asyncHandler(async (req, res) => {
   const userId = req.params.userId;

@@ -11,15 +11,14 @@ import { useState } from "react";
 import Navbar from "../components/Navbar";
 import Home from "../pages/Home";
 import Products from "../pages/Products";
-import AddProduct from "../pages/add";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import MyListings from "../pages/MyListings";
-import SellForm from "../pages/SellForm";
 import Profile from "../pages/Profile";
 import ProductDetails from "../pages/ProductDetails";
 import PaymentSuccess from "../pages/PaymentSuccess";
 import PaymentFailed from "../pages/PaymentFailed";
+import AddProduct from "../pages/AddProduct";
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -65,18 +64,18 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-        <Route
+        {/* <Route
           path="/sell"
           element={
             <ProtectedRoute>
               <SellForm />
             </ProtectedRoute>
           }
-        />
+        /> */}
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/products" element={<Products />} />
         <Route
-          path="/product/add"
+          path="/sell"
           element={
             <ProtectedRoute>
               <AddProduct />

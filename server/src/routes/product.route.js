@@ -13,7 +13,16 @@ import { isAuthenticated } from "../middlewares/auth.middleware.js"; // ✅ Impo
 const router = express.Router();
 
 // POST: Create a product (🔐 protected)
-router.post("/create", isAuthenticated, upload.array("images", 5), createProduct);
+router.post(
+  "/create",
+  isAuthenticated,
+  upload.fields([
+    { name: "images", maxCount: 10 }, // Required (min 3 validated in controller)
+    { name: "bills", maxCount: 5 },   // Optional
+  ]),
+  createProduct
+);
+
 
 // GET: All products
 router.get("/all", getAllProducts);

@@ -33,7 +33,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Multer config
+// ✅ Export multer instance (no unnecessary code changes)
 export const upload = multer({
   storage,
   fileFilter,
