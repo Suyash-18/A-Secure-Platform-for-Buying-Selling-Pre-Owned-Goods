@@ -88,7 +88,7 @@ const ProductDetails = () => {
               <img
                 src={mainImage || "https://via.placeholder.com/400?text=No+Image"}
                 alt={product.title}
-                className="w-full h-[350px] object-cover transition-transform duration-300 group-hover:scale-105"
+                className="w-full h-[350px] object-contain transition-transform duration-300 group-hover:scale-105"
               />
             </div>
 
