@@ -26,6 +26,11 @@ app.use("/api/products", productRoutes)
 import geocodeRoutes from "./routes/geocode.route.js"
 app.use("/api/geocode", geocodeRoutes)
 
+
+import paymentRouter from "./routes/payment.route.js";
+app.use("/api/payment", paymentRouter);
+
+
 app.get("/", (req, res) => {
     res.send("Server is running")
 })

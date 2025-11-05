@@ -5,6 +5,7 @@ import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { motion } from "framer-motion";
+import CheckoutButton from "../components/CheckoutButton";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -46,12 +47,10 @@ const ProductDetails = () => {
 
   const handleSendMessage = () => {
     if (!input.trim()) return;
-
     const newMessage = { sender: "user", text: input };
     setMessages((prev) => [...prev, newMessage]);
     setInput("");
 
-    // Auto-reply from seller
     setTimeout(() => {
       const reply = {
         sender: "seller",
@@ -62,6 +61,7 @@ const ProductDetails = () => {
   };
 
   if (loading) return <p className="text-center py-20">Loading product...</p>;
+
   if (error || !product)
     return (
       <div className="text-center py-20">
@@ -81,31 +81,30 @@ const ProductDetails = () => {
         
         {/* -------- TOP SECTION -------- */}
         <div className="flex flex-col lg:flex-row gap-10">
+          
           {/* Left: Product Images */}
-         {/* Left: Product Images */}
-<div className="lg:w-2/3 flex flex-col items-center">
-  <div className="rounded-xl overflow-hidden shadow-lg max-w-md w-full">
-    <img
-      src={mainImage || "https://via.placeholder.com/400?text=No+Image"}
-      alt={product.title}
-      className="w-full h-[280px] object-cover"
-    />
-  </div>
-  {/* Thumbnails */}
-  <div className="flex space-x-3 mt-4 overflow-x-auto pb-2">
-    {product.images?.map((img, i) => (
-      <img
-        key={i}
-        src={img.url}
-        alt="thumbnail"
-        onClick={() => setMainImage(img.url)}
-        className={`w-20 h-20 object-cover border-2 rounded-lg cursor-pointer transition-transform 
-        ${mainImage === img.url ? "border-purple-600 scale-110" : "border-gray-200 hover:border-purple-400 hover:scale-105"}`}
-      />
-    ))}
-  </div>
-</div>
-
+          <div className="lg:w-2/3 flex flex-col items-center">
+            <div className="rounded-xl overflow-hidden shadow-lg max-w-md w-full">
+              <img
+                src={mainImage || "https://via.placeholder.com/400?text=No+Image"}
+                alt={product.title}
+                className="w-full h-[280px] object-cover"
+              />
+            </div>
+            {/* Thumbnails */}
+            <div className="flex space-x-3 mt-4 overflow-x-auto pb-2">
+              {product.images?.map((img, i) => (
+                <img
+                  key={i}
+                  src={img.url}
+                  alt="thumbnail"
+                  onClick={() => setMainImage(img.url)}
+                  className={`w-20 h-20 object-cover border-2 rounded-lg cursor-pointer transition-transform 
+                  ${mainImage === img.url ? "border-purple-600 scale-110" : "border-gray-200 hover:border-purple-400 hover:scale-105"}`}
+                />
+              ))}
+            </div>
+          </div>
 
           {/* Right: Chat Box */}
           <div className="lg:w-1/3 bg-gray-50 rounded-2xl p-6 shadow-inner flex flex-col border border-gray-200">
@@ -175,10 +174,17 @@ const ProductDetails = () => {
 
         {/* -------- BOTTOM SECTION -------- */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-          {/* Bottom Left: Product Description */}
+          
+          {/* Left: Product Details */}
           <div className="space-y-6">
             <h1 className="text-3xl font-bold text-gray-800">{product.title}</h1>
             <p className="text-2xl text-purple-600 font-semibold">₹ {product.price}</p>
+
+            {/* ✅ Dynamic Payment Button */}
+            <div className="mt-4">
+              <CheckoutButton amount={product.price} />
+            </div>
+
             <p className="text-gray-500">{product.location?.city || "Unknown Location"}</p>
 
             <div className="border-t pt-4">
@@ -201,7 +207,7 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          {/* Bottom Right: Map */}
+          {/* Right: Location Map */}
           <div>
             <h2 className="text-lg font-semibold mb-3 text-gray-800">Location</h2>
             <div className="rounded-xl overflow-hidden shadow">
@@ -218,6 +224,7 @@ const ProductDetails = () => {
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );

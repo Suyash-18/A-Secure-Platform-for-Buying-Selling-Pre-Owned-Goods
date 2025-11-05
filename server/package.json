@@ -32,7 +32,9 @@
     "mongoose": "^8.10.2",
     "mongoose-aggregate-paginate-v2": "^1.1.4",
     "multer": "^1.4.5-lts.1",
+    "razorpay": "^2.9.6",
     "server": "file:",
+    "stripe": "^19.2.1",
     "uuid": "^11.1.0"
   }
 }
