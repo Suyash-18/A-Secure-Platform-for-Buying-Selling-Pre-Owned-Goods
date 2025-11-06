@@ -19,6 +19,8 @@ import ProductDetails from "../pages/ProductDetails";
 import PaymentSuccess from "../pages/PaymentSuccess";
 import PaymentFailed from "../pages/PaymentFailed";
 import AddProduct from "../pages/AddProduct";
+import EditProfile from "../pages/EditProfile";
+import EditListing from "../pages/EditListing";
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -85,6 +87,9 @@ const AppContent = () => {
         // in your React Router config
         <Route path="/payment-success/:orderId" element={<PaymentSuccess />} />
         <Route path="/payment-failed" element={<PaymentFailed />} />
+        <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/edit-product/:id" element={<EditListing />} />
+
       </Routes>
     </div>
   );

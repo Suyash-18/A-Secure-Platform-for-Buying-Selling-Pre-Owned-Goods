@@ -174,10 +174,38 @@ export const googleLoginUser = async (req, res) => {
     res.status(400).json({ message: "Invalid Google token" });
   }
 };
+const updateProfile = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const { fullname, username, email } = req.body;
+  const updates = { fullname, username, email };
 
+  // ✅ Check if username or email already exists (for other users)
+  if (username) {
+    const existingUser = await User.findOne({ username, _id: { $ne: userId } });
+    if (existingUser) {
+      throw new ApiError(400, "Username already taken!");
+    }
+  }
+  if (email) {
+    const existingEmail = await User.findOne({ email, _id: { $ne: userId } });
+    if (existingEmail) {
+      throw new ApiError(400, "Email already registered!");
+    }
+  }
 
+  // ✅ Update user data
+  const updatedUser = await User.findByIdAndUpdate(userId, updates, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json(
+    new ApiResponse(200, updatedUser, "Profile updated successfully")
+  );
+});
 
 export {
   registerUser,
-  loginUser
+  loginUser,
+  updateProfile
  };

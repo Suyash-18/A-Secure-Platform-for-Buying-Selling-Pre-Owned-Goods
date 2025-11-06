@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import CheckoutButton from "../components/CheckoutButton";
 
 const ProductDetails = () => {
@@ -21,6 +21,9 @@ const ProductDetails = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const chatEndRef = useRef(null);
+
+  // NEW: safety modal state
+  const [showSafetyModal, setShowSafetyModal] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -58,6 +61,23 @@ const ProductDetails = () => {
       };
       setMessages((prev) => [...prev, reply]);
     }, 1000);
+  };
+
+  // NEW: open modal before chat
+  const onStartChatClick = () => {
+    setShowSafetyModal(true);
+  };
+
+  // NEW: continue after modal
+  const onContinueToChat = () => {
+    setShowSafetyModal(false);
+    if (!user) {
+      showToast({ message: "Please login to chat", type: "error" });
+      navigate("/login");
+      return;
+    }
+    setChatOpen(true);
+    showToast({ message: "Chat started!", type: "success" });
   };
 
   if (loading) return <p className="text-center py-20 text-gray-600">Loading product...</p>;
@@ -109,6 +129,7 @@ const ProductDetails = () => {
               ))}
             </div>
           </div>
+
           {/* ✅ Right: Chat Box */}
           <div className="lg:w-1/3 bg-gradient-to-b from-gray-50 to-white rounded-2xl p-6 shadow border border-gray-100 flex flex-col">
             <div className="flex items-center justify-between mb-3">
@@ -147,15 +168,7 @@ const ProductDetails = () => {
 
             {!chatOpen ? (
               <button
-                onClick={() => {
-                  if (!user) {
-                    showToast({ message: "Please login to chat", type: "error" });
-                    navigate("/login");
-                    return;
-                  }
-                  setChatOpen(true);
-                  showToast({ message: "Chat started!", type: "success" });
-                }}
+                onClick={onStartChatClick} // OPEN SAFETY MODAL FIRST
                 className="mt-4 bg-purple-600 text-white py-3 rounded-lg shadow hover:bg-purple-700 transition"
               >
                 Start Chat
@@ -295,12 +308,9 @@ const ProductDetails = () => {
                             alt={`bill-${i}`}
                             className="w-full h-24 object-cover"
                             onError={(e) => {
-                              // fallback to icon if not an image
                               e.currentTarget.style.display = "none";
                             }}
                           />
-                          {/* If not an image, we still keep link visible */}
-                          {/* Could add a generic document icon here if you prefer */}
                         </a>
                       ))}
                     </div>
@@ -351,8 +361,89 @@ const ProductDetails = () => {
         </div>
 
       </div>
+
+      {/* ================= SAFETY MODAL ================= */}
+      <AnimatePresence>
+        {showSafetyModal && (
+          <SafetyModal
+            onClose={() => setShowSafetyModal(false)}
+            onContinue={onContinueToChat}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
 export default ProductDetails;
+
+/* ------------ Inline Safety Modal Component ------------- */
+const SafetyModal = ({ onClose, onContinue }) => {
+  // Close on ESC
+  React.useEffect(() => {
+    const h = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      aria-modal="true"
+      role="dialog"
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      {/* Card */}
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0, y: 12 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 12 }}
+        className="relative mx-auto mt-20 w-[92%] max-w-xl rounded-2xl bg-white p-6 shadow-2xl"
+      >
+        <div className="flex items-start gap-3">
+          {/* Warning Icon (SVG) */}
+          <div className="shrink-0 rounded-full p-2 bg-orange-100">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-orange-600"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M1.43 18.57 10.3 3.98c.8-1.35 2.61-1.35 3.41 0l8.87 14.59c.82 1.35-.17 3.08-1.71 3.08H3.14c-1.54 0-2.53-1.73-1.71-3.08zM12 8c.55 0 1 .45 1 1v5a1 1 0 1 1-2 0V9c0-.55.45-1 1-1zm0 9.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5z" />
+            </svg>
+          </div>
+
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-gray-900">Tips for a safe deal</h3>
+            <ul className="mt-3 space-y-2 text-sm text-gray-700">
+              <li>• Don’t enter UPI PIN/OTP, scan unknown QR codes, or click unsafe links.</li>
+              <li>• Never give money or product in advance.</li>
+              <li>• Report suspicious users to the platform.</li>
+              <li>• Don’t share personal details like photos or IDs.</li>
+              <li>• Be cautious during buyer–seller meetings.</li>
+            </ul>
+
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={onContinue}
+                className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 shadow"
+              >
+                Continue to chat
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};

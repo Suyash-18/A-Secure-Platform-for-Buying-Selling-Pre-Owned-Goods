@@ -3,7 +3,7 @@ import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Toaster from "../components/Toaster";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ username: "", password: "" });
@@ -12,23 +12,39 @@ const Login = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // --- GOOGLE LOGIN SETUP ---
+  // Load Google script and render button (works on first load)
   useEffect(() => {
-    /* global google */
-    if (window.google) {
+    const ensureGoogle = () =>
+      new Promise((resolve) => {
+        if (window.google?.accounts?.id) return resolve(true);
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = () => resolve(true);
+        document.body.appendChild(script);
+      });
+
+    (async () => {
+      await ensureGoogle();
+      /* global google */
       google.accounts.id.initialize({
-        client_id: "178540745723-jkllm1668tn8tjis51ishui0al180gjl.apps.googleusercontent.com", // ⬅️ Replace with your real Client ID
+        client_id:
+          "178540745723-jkllm1668tn8tjis51ishui0al180gjl.apps.googleusercontent.com",
         callback: handleGoogleResponse,
       });
 
-      google.accounts.id.renderButton(
-        document.getElementById("googleLoginBtn"),
-        { theme: "outline", size: "large", width: "100%" }
-      );
-    }
+      const mount = document.getElementById("googleLoginBtn");
+      if (mount) {
+        google.accounts.id.renderButton(mount, {
+          theme: "outline",
+          size: "large",
+          width: "100%",
+        });
+      }
+    })();
   }, []);
 
-  // Handle Google login response
   const handleGoogleResponse = async (response) => {
     try {
       const decoded = jwtDecode(response.credential);
@@ -49,7 +65,6 @@ const Login = () => {
     }
   };
 
-  // --- NORMAL LOGIN HANDLER ---
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
   };
@@ -68,73 +83,72 @@ const Login = () => {
     } catch (err) {
       const html = err?.response?.data;
       let message = "Something went wrong.";
-
       if (typeof html === "string" && html.includes("<pre>")) {
         const matches = html.match(/<pre>(.*?)<\/pre>/s);
         if (matches && matches[1]) {
-          message = matches[1]
-            .split("<br>")[0]
-            .replace("Error:", "")
-            .trim();
+          message = matches[1].split("<br>")[0].replace("Error:", "").trim();
         }
       } else if (err?.response?.data?.message) {
         message = err.response.data.message;
       }
-
       setError(message);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#9575cd66] relative">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100">
       {error && <Toaster message={error} onClose={() => setError("")} type="error" />}
       {success && <Toaster message={success} onClose={() => setSuccess("")} type="success" />}
 
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-sm">
-        <h2 className="text-2xl font-bold mb-6 text-[#9575cd] text-center">Welcome Back</h2>
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm border border-purple-100"
+      >
+        {/* Brand */}
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white flex items-center justify-center shadow-md">
+            <span className="font-bold">FX</span>
+          </div>
+          <h2 className="text-2xl font-bold mt-3 text-gray-800">FreshExchange</h2>
+          <p className="text-gray-500 text-sm">Welcome back</p>
+        </div>
 
-        {/* Username Input */}
-        <input
-          type="text"
-          name="username"
-          placeholder="Username or Email"
-          className="w-full border border-[#9575cd] p-3 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-[#a680e9]"
-          onChange={handleChange}
-          required
-        />
+        {/* Google */}
+        <div id="googleLoginBtn" className="w-full mb-4 flex justify-center"></div>
 
-        {/* Password Input */}
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          className="w-full border border-[#9575cd] p-3 rounded mb-6 focus:outline-none focus:ring-2 focus:ring-[#a680e9]"
-          onChange={handleChange}
-          required
-        />
-
-        {/* Normal Login Button */}
-        <button
-          type="submit"
-          className="w-full bg-[#FF7043] text-white font-semibold py-2 px-4 rounded hover:bg-[#f26535] transition-colors"
-        >
-          Login
-        </button>
-
-        {/* Divider */}
         <div className="flex items-center my-4">
           <hr className="flex-1 border-gray-300" />
           <span className="mx-2 text-gray-500 text-sm">or</span>
           <hr className="flex-1 border-gray-300" />
         </div>
 
-        {/* Google Login Button */}
-        <div id="googleLoginBtn" className="flex justify-center"></div>
+        <input
+          type="text"
+          name="username"
+          placeholder="Email or Username"
+          className="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-purple-300 bg-gray-50"
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          className="w-full border border-gray-300 p-3 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-purple-300 bg-gray-50"
+          onChange={handleChange}
+          required
+        />
 
-        {/* Register Link */}
-        <p className="mt-4 text-center text-gray-600">
+        <button
+          type="submit"
+          className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-2.5 rounded-lg font-semibold hover:opacity-90 transition"
+        >
+          Login
+        </button>
+
+        <p className="text-center text-gray-600 mt-4">
           Don't have an account?{" "}
-          <a href="/signup" className="text-[#9575cd] font-semibold hover:underline">
+          <a href="/signup" className="text-purple-600 font-semibold hover:underline">
             Register here
           </a>
         </p>
