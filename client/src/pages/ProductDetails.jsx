@@ -21,11 +21,13 @@ const ProductDetails = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const chatEndRef = useRef(null);
-
-  // NEW: safety modal state
   const [showSafetyModal, setShowSafetyModal] = useState(false);
 
+  // ✅ Fetch product details
   useEffect(() => {
+    if (!id) return; // 🛑 Prevent fetching if ID is undefined
+console.log("🟣 Product ID from URL:", id);
+
     const fetchProduct = async () => {
       try {
         const res = await axios.get(`http://localhost:5000/api/products/${id}`);
@@ -36,18 +38,22 @@ const ProductDetails = () => {
           setError("Product not found.");
         }
       } catch (err) {
+        console.error("Error fetching product:", err);
         setError("An error occurred while fetching the product.");
       } finally {
         setLoading(false);
       }
     };
+
     fetchProduct();
   }, [id]);
 
+  // ✅ Auto-scroll chat to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // ✅ Handle message sending
   const handleSendMessage = () => {
     if (!input.trim()) return;
     const newMessage = { sender: "user", text: input };
@@ -63,12 +69,8 @@ const ProductDetails = () => {
     }, 1000);
   };
 
-  // NEW: open modal before chat
-  const onStartChatClick = () => {
-    setShowSafetyModal(true);
-  };
-
-  // NEW: continue after modal
+  // ✅ Modal logic for safe chat
+  const onStartChatClick = () => setShowSafetyModal(true);
   const onContinueToChat = () => {
     setShowSafetyModal(false);
     if (!user) {
@@ -103,15 +105,13 @@ const ProductDetails = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-xl p-8 space-y-12">
-        {/* ✅ TOP SECTION */}
+        {/* ==================== TOP SECTION ==================== */}
         <div className="flex flex-col lg:flex-row gap-10">
-          {/* ✅ Left: Product Images */}
+          {/* ✅ Product Images */}
           <div className="lg:w-2/3 flex flex-col items-center">
             <div className="relative rounded-xl overflow-hidden shadow-lg max-w-md w-full group">
               <img
-                src={
-                  mainImage || "https://via.placeholder.com/400?text=No+Image"
-                }
+                src={mainImage || "https://via.placeholder.com/400?text=No+Image"}
                 alt={product.title}
                 className="w-full h-[350px] object-contain transition-transform duration-300 group-hover:scale-105"
               />
@@ -136,7 +136,7 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          {/* ✅ Right: Chat Box */}
+          {/* ✅ Chat Box */}
           <div className="lg:w-1/3 bg-gradient-to-b from-gray-50 to-white rounded-2xl p-6 shadow border border-gray-100 flex flex-col">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xl font-semibold text-gray-800">
@@ -179,7 +179,6 @@ const ProductDetails = () => {
             )}
 
             {user && product.seller && user._id === product.seller._id ? (
-              // 🛑 User is the seller — don't allow chat
               <button
                 disabled
                 className="mt-4 bg-gray-400 text-white py-3 rounded-lg shadow cursor-not-allowed"
@@ -187,15 +186,13 @@ const ProductDetails = () => {
                 You are the Seller
               </button>
             ) : !chatOpen ? (
-              // 💬 Chat not open yet
               <button
-                onClick={onStartChatClick} // OPEN SAFETY MODAL FIRST
+                onClick={onStartChatClick}
                 className="mt-4 bg-purple-600 text-white py-3 rounded-lg shadow hover:bg-purple-700 transition"
               >
                 Start Chat
               </button>
             ) : (
-              // 🗨️ Chat Open UI
               <div className="mt-4 flex space-x-2">
                 <input
                   type="text"
@@ -203,9 +200,7 @@ const ProductDetails = () => {
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Type your message..."
                   className="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSendMessage();
-                  }}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                 />
                 <button
                   onClick={handleSendMessage}
@@ -218,219 +213,11 @@ const ProductDetails = () => {
           </div>
         </div>
 
-        {/* ✅ BOTTOM SECTION */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* Left: Product Details (2 columns wide) */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-                {product.title}
-              </h1>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-sm font-medium text-purple-700 ring-1 ring-inset ring-purple-200">
-                  {product.condition}
-                </span>
-                <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700 ring-1 ring-inset ring-gray-200">
-                  {product.category}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-baseline gap-3">
-              <p className="text-3xl text-purple-700 font-bold">
-                ₹ {product.price}
-              </p>
-              {product.createdAt && (
-                <span className="text-xs text-gray-500">
-                  Posted on {new Date(product.createdAt).toLocaleDateString()}
-                </span>
-              )}
-            </div>
-
-            {/* ✅ Payment */}
-            {/* CheckoutButton added here */}
-            <div className="mt-4">
-              {user && product.seller && user._id === product.seller._id ? (
-                <p className="text-red-500 font-medium">
-                  ⚠️ You cannot purchase your own product.
-                </p>
-              ) : (
-                <CheckoutButton
-                  amount={product.price}
-                  productId={product._id}
-                />
-              )}
-            </div>
-
-            {/* Location short line */}
-            <p className="text-gray-500">
-              {product?.location?.address
-                ? `${product.location.address}, `
-                : ""}
-              {product?.location?.city || "Unknown City"}
-            </p>
-
-            {/* Description */}
-            <div className="border rounded-2xl p-5">
-              <h2 className="text-lg font-semibold mb-2 text-gray-900">
-                Description
-              </h2>
-              <p className="text-gray-700 leading-relaxed">
-                {product.description || "No description available"}
-              </p>
-            </div>
-
-            {/* Specs / Meta */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="rounded-2xl border p-5">
-                <h3 className="text-base font-semibold text-gray-900 mb-2">
-                  Details
-                </h3>
-                <ul className="text-gray-700 space-y-2">
-                  <li className="flex justify-between">
-                    <span className="text-gray-500">Condition</span>
-                    <span className="font-medium">{product.condition}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-500">Category</span>
-                    <span className="font-medium">{product.category}</span>
-                  </li>
-                  {product?.location?.state && (
-                    <li className="flex justify-between">
-                      <span className="text-gray-500">State</span>
-                      <span className="font-medium">
-                        {product.location.state}
-                      </span>
-                    </li>
-                  )}
-                  {product?.location?.country && (
-                    <li className="flex justify-between">
-                      <span className="text-gray-500">Country</span>
-                      <span className="font-medium">
-                        {product.location.country}
-                      </span>
-                    </li>
-                  )}
-                </ul>
-              </div>
-
-              <div className="rounded-2xl border p-5">
-                <h3 className="text-base font-semibold text-gray-900 mb-2">
-                  Proof & Accessories
-                </h3>
-                <ul className="text-gray-700 space-y-2">
-                  <li className="flex items-center justify-between">
-                    <span className="text-gray-500">Bills</span>
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                        product?.bills?.length
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {product?.bills?.length ? "Available" : "Not Available"}
-                    </span>
-                  </li>
-                  <li className="flex items-center justify-between">
-                    <span className="text-gray-500">Warranty</span>
-                    <span className="font-medium">
-                      {product.warranty || "Not Available"}
-                    </span>
-                  </li>
-                  <li className="flex items-center justify-between">
-                    <span className="text-gray-500">Accessories</span>
-                    <span className="font-medium">
-                      {product.accessories || "Not Mentioned"}
-                    </span>
-                  </li>
-                </ul>
-
-                {/* Bills Preview Thumbnails if available */}
-                {product?.bills?.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">
-                      Bills
-                    </h4>
-                    <div className="grid grid-cols-3 gap-2">
-                      {product.bills.map((b, i) => (
-                        <a
-                          key={i}
-                          href={b.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block rounded-lg overflow-hidden border hover:ring-2 hover:ring-purple-300 transition"
-                          title="Open bill"
-                        >
-                          <img
-                            src={b.url}
-                            alt={`bill-${i}`}
-                            className="w-full h-24 object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = "none";
-                            }}
-                          />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Location Map */}
-          <div className="lg:col-span-1">
-            <h2 className="text-lg font-semibold mb-3 text-gray-900">
-              Location
-            </h2>
-            <div className="rounded-2xl overflow-hidden shadow ring-1 ring-gray-200">
-              <iframe
-                title="map"
-                width="100%"
-                height="320"
-                loading="lazy"
-                allowFullScreen
-                src={(() => {
-                  const lat = product?.location?.coordinates?.lat;
-                  const lng = product?.location?.coordinates?.lng;
-                  if (lat && lng) {
-                    return `https://www.google.com/maps?q=${lat},${lng}&z=14&output=embed`;
-                  }
-                  const q = product?.location?.address
-                    ? `${product.location.address}, ${
-                        product.location.city || ""
-                      }, ${product.location.state || ""}, ${
-                        product.location.country || ""
-                      }`
-                    : product?.location?.city || "India";
-                  return `https://www.google.com/maps?q=${encodeURIComponent(
-                    q
-                  )}&z=12&output=embed`;
-                })()}
-              />
-            </div>
-
-            {/* Address block */}
-            <div className="mt-4 rounded-2xl border p-4 text-sm text-gray-700 bg-white">
-              <p className="font-medium text-gray-900 mb-1">Address</p>
-              <p className="text-gray-700">
-                {product?.location?.address ? product.location.address : "—"}
-              </p>
-              <p className="text-gray-700">
-                {[
-                  product?.location?.city,
-                  product?.location?.state,
-                  product?.location?.country,
-                ]
-                  .filter(Boolean)
-                  .join(", ") || "—"}
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* ==================== PRODUCT DETAILS SECTION ==================== */}
+        <ProductInfoSection product={product} user={user} />
       </div>
 
-      {/* ================= SAFETY MODAL ================= */}
+      {/* ==================== SAFETY MODAL ==================== */}
       <AnimatePresence>
         {showSafetyModal && (
           <SafetyModal
@@ -445,13 +232,102 @@ const ProductDetails = () => {
 
 export default ProductDetails;
 
-/* ------------ Inline Safety Modal Component ------------- */
+/* ------------ PRODUCT INFO SECTION (split for clarity) ------------- */
+const ProductInfoSection = ({ product, user }) => {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="lg:col-span-2 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+            {product.title}
+          </h1>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-sm font-medium text-purple-700 ring-1 ring-inset ring-purple-200">
+              {product.condition}
+            </span>
+            <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700 ring-1 ring-inset ring-gray-200">
+              {product.category}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-baseline gap-3">
+          <p className="text-3xl text-purple-700 font-bold">
+            ₹ {product.price}
+          </p>
+          {product.createdAt && (
+            <span className="text-xs text-gray-500">
+              Posted on {new Date(product.createdAt).toLocaleDateString()}
+            </span>
+          )}
+        </div>
+
+        <div className="mt-4">
+          {user && product.seller && user._id === product.seller._id ? (
+            <p className="text-red-500 font-medium">
+              ⚠️ You cannot purchase your own product.
+            </p>
+          ) : (
+            <CheckoutButton amount={product.price} productId={product._id} />
+          )}
+        </div>
+
+        {/* Location */}
+        <p className="text-gray-500">
+          {product?.location?.address
+            ? `${product.location.address}, `
+            : ""}
+          {product?.location?.city || "Unknown City"}
+        </p>
+
+        {/* Description */}
+        <div className="border rounded-2xl p-5">
+          <h2 className="text-lg font-semibold mb-2 text-gray-900">
+            Description
+          </h2>
+          <p className="text-gray-700 leading-relaxed">
+            {product.description || "No description available"}
+          </p>
+        </div>
+      </div>
+
+      {/* Map Section */}
+      <div className="lg:col-span-1">
+        <h2 className="text-lg font-semibold mb-3 text-gray-900">Location</h2>
+        <div className="rounded-2xl overflow-hidden shadow ring-1 ring-gray-200">
+          <iframe
+            title="map"
+            width="100%"
+            height="320"
+            loading="lazy"
+            allowFullScreen
+            src={(() => {
+              const lat = product?.location?.coordinates?.lat;
+              const lng = product?.location?.coordinates?.lng;
+              if (lat && lng) {
+                return `https://www.google.com/maps?q=${lat},${lng}&z=14&output=embed`;
+              }
+              const q =
+                product?.location?.address ||
+                product?.location?.city ||
+                "India";
+              return `https://www.google.com/maps?q=${encodeURIComponent(
+                q
+              )}&z=12&output=embed`;
+            })()}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ------------ SAFETY MODAL COMPONENT ------------- */
 const SafetyModal = ({ onClose, onContinue }) => {
-  // Close on ESC
   React.useEffect(() => {
-    const h = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
+    const handleEsc = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
   }, [onClose]);
 
   return (
@@ -463,9 +339,7 @@ const SafetyModal = ({ onClose, onContinue }) => {
       aria-modal="true"
       role="dialog"
     >
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      {/* Card */}
       <motion.div
         initial={{ scale: 0.95, opacity: 0, y: 12 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -473,7 +347,6 @@ const SafetyModal = ({ onClose, onContinue }) => {
         className="relative mx-auto mt-20 w-[92%] max-w-xl rounded-2xl bg-white p-6 shadow-2xl"
       >
         <div className="flex items-start gap-3">
-          {/* Warning Icon (SVG) */}
           <div className="shrink-0 rounded-full p-2 bg-orange-100">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -490,14 +363,11 @@ const SafetyModal = ({ onClose, onContinue }) => {
               Tips for a safe deal
             </h3>
             <ul className="mt-3 space-y-2 text-sm text-gray-700">
-              <li>
-                • Don’t enter UPI PIN/OTP, scan unknown QR codes, or click
-                unsafe links.
-              </li>
+              <li>• Don’t enter UPI PIN/OTP or scan unknown QR codes.</li>
               <li>• Never give money or product in advance.</li>
               <li>• Report suspicious users to the platform.</li>
-              <li>• Don’t share personal details like photos or IDs.</li>
-              <li>• Be cautious during buyer–seller meetings.</li>
+              <li>• Don’t share personal details like IDs or photos.</li>
+              <li>• Be cautious during meetings.</li>
             </ul>
 
             <div className="mt-5 flex items-center justify-end gap-3">

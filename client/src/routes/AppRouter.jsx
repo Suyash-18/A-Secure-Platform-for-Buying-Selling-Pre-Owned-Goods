@@ -74,7 +74,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         /> */}
-        <Route path="/product/:id" element={<ProductDetails />} />
+<Route path="/products/:id" element={<ProductDetails />} />
         <Route path="/products" element={<Products />} />
         <Route
           path="/sell"

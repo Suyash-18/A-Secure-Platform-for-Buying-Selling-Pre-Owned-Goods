@@ -12,8 +12,8 @@ const ProductProvider = ({ children }) => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/products/`);
-        setProducts(response.data);
+        const response = await axios.get(`http://localhost:5000/api/products/all`);
+        setProducts(response.data.products);
       } catch (err) {
         console.error("Error fetching products:", err);
         setError(err);
