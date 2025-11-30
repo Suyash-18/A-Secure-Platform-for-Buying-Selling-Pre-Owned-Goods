@@ -1,57 +1,91 @@
-import Chat from "../models/chatModel.js";
-import Message from "../models/messageModel.js";
+import { Chat } from "../models/chat.model.js";
+import { Message } from "../models/message.model.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiError } from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import mongoose from "mongoose";
 
-// Get or create chat
-export const getOrCreateChat = async (req, res) => {
+export const getOrCreateChat = asyncHandler(async (req, res) => {
   const { productId, sellerId } = req.body;
-  const userId = req.user._id;
+  const buyerId = req.user._id;
 
-  try {
-    let chat = await Chat.findOne({
-      product: productId,
-      users: { $all: [userId, sellerId] },
-    });
+  if (!productId || !sellerId) {
+    throw new ApiError(400, "productId and sellerId are required");
+  }
 
-    if (!chat) {
+  if (buyerId.toString() === sellerId.toString()) {
+    throw new ApiError(400, "You cannot chat with yourself");
+  }
+
+  // normalize participants the same way as model pre-save
+  const participants = [buyerId.toString(), sellerId.toString()].sort();
+
+  // try to find existing chat
+  let chat = await Chat.findOne({
+    product: productId,
+    participants: participants,
+  }).populate("participants", "fullname avatar email");
+
+  if (!chat) {
+    try {
       chat = await Chat.create({
         product: productId,
-        users: [userId, sellerId],
+        participants,
       });
+      // populate for response
+      await chat.populate("participants", "fullname avatar email");
+    } catch (err) {
+      // handle duplicate key error (race condition)
+      if (err.code === 11000) {
+        chat = await Chat.findOne({
+          product: productId,
+          participants: participants,
+        }).populate("participants", "fullname avatar email");
+      } else throw err;
     }
-
-    res.json({ success: true, chat });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
   }
-};
 
-// Get messages
-export const getMessages = async (req, res) => {
-  try {
-    const { chatId } = req.params;
-    const messages = await Message.find({ chat: chatId }).populate("sender", "name _id");
-    res.json({ success: true, messages });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+  const messages = await Message.find({ chat: chat._id }).populate("sender", "fullname avatar email");
+
+  res.status(200).json(
+    new ApiResponse(200, { chat, messages }, "Chat fetched or created successfully")
+  );
+});
+
+export const getChatByProduct = asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+  const buyerId = req.user._id;
+
+  const chat = await Chat.findOne({
+    product: productId,
+    participants: buyerId,
+  }).populate("participants", "fullname avatar email");
+
+  if (!chat) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { chat: null, messages: [] }, "No chat found"));
   }
-};
 
-// Send message
-export const sendMessage = async (req, res) => {
-  const { chatId, text } = req.body;
-  const senderId = req.user._id;
+  const messages = await Message.find({ chat: chat._id }).populate(
+    "sender",
+    "fullname avatar email"
+  );
 
-  try {
-    const message = await Message.create({
-      chat: chatId,
-      sender: senderId,
-      text,
-    });
+  res
+    .status(200)
+    .json(new ApiResponse(200, { chat, messages }, "Chat loaded successfully"));
+});
 
-    await Chat.findByIdAndUpdate(chatId, { lastMessage: message._id });
+export const getUserChats = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
 
-    res.json({ success: true, message });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-};
+  const chats = await Chat.find({ participants: userId })
+    .populate("product", "title images price")          // show product info
+    .populate("participants", "fullname avatar email")  // show buyer/seller
+    .sort({ updatedAt: -1 });                           // newest chat first
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, chats, "Chats for user loaded successfully"));
+});

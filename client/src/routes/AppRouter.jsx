@@ -21,6 +21,7 @@ import PaymentFailed from "../pages/PaymentFailed";
 import AddProduct from "../pages/AddProduct";
 import EditProfile from "../pages/EditProfile";
 import EditListing from "../pages/EditListing";
+import SellerChats from "../components/SellerChats";
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -89,6 +90,7 @@ const AppContent = () => {
         <Route path="/payment-failed" element={<PaymentFailed />} />
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/edit-product/:id" element={<EditListing />} />
+        <Route path="/notifications" element={<SellerChats />} />
 
       </Routes>
     </div>

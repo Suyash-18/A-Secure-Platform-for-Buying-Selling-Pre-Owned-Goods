@@ -1,4 +1,3 @@
-// src/pages/ProductDetails.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -6,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { motion, AnimatePresence } from "framer-motion";
 import CheckoutButton from "../components/CheckoutButton";
+import ChatBox from "../components/ChatBox";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -13,24 +13,57 @@ const ProductDetails = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
 
+  // ✅ All states defined at top (correct order)
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [mainImage, setMainImage] = useState("");
-  const [chatOpen, setChatOpen] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const chatEndRef = useRef(null);
+  const [chatId, setChatId] = useState(null);
   const [showSafetyModal, setShowSafetyModal] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState([]); // ✅ Added missing state
+  const chatEndRef = useRef(null);
+  const [chatData, setChatData] = useState(null);
+
+  useEffect(() => {
+    if (!user) return;
+    axios
+      .get(`http://localhost:5000/api/chats/product/${id}`, {
+        withCredentials: true,
+      })
+      .then((res) => {
+        if (res.data?.data?.chat) {
+          setChatData(res.data.data); // { chat, messages }
+        }
+      });
+  }, [id, user]);
+
+  const handleStartChat = async () => {
+    // If chat already exists, just open it
+    if (chatData?.chat) return openChat(chatData.chat._id, chatData.messages);
+
+    // Else create it
+    const res = await axios.post(
+      "http://localhost:5000/api/chats/get-or-create",
+      { id, sellerId: product.seller._id },
+      { withCredentials: true }
+    );
+
+    openChat(res.data.data.chat._id, res.data.data.messages);
+  };
 
   // ✅ Fetch product details
   useEffect(() => {
-    if (!id) return; // 🛑 Prevent fetching if ID is undefined
-console.log("🟣 Product ID from URL:", id);
+    if (!id) return;
+    console.log("🟣 Product ID from URL:", id);
 
     const fetchProduct = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/products/${id}`);
+        const res = await axios.get(
+          `http://localhost:5000/api/products/${id}`,
+          { withCredentials: true }
+        );
+        console.log("🟢 Product fetched:", res.data.product);
         if (res.data?.success) {
           setProduct(res.data.product);
           setMainImage(res.data.product.images?.[0]?.url || "");
@@ -47,39 +80,100 @@ console.log("🟣 Product ID from URL:", id);
 
     fetchProduct();
   }, [id]);
-
-  // ✅ Auto-scroll chat to bottom
+  // ✅ Auto-load chat if it already exists
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const fetchExistingChat = async () => {
+      if (!user || !product?._id) return;
 
-  // ✅ Handle message sending
-  const handleSendMessage = () => {
-    if (!input.trim()) return;
-    const newMessage = { sender: "user", text: input };
-    setMessages((prev) => [...prev, newMessage]);
-    setInput("");
+      try {
+        const res = await axios.get(
+          `http://localhost:5000/api/chats/product/${product._id}`,
+          { withCredentials: true }
+        );
 
-    setTimeout(() => {
-      const reply = {
-        sender: "seller",
-        text: "Thanks for reaching out! I’ll get back to you shortly.",
-      };
-      setMessages((prev) => [...prev, reply]);
-    }, 1000);
-  };
+        const chatData = res.data?.data;
 
-  // ✅ Modal logic for safe chat
+        if (chatData?.chat?._id) {
+          console.log("💬 Existing chat found:", chatData.chat._id);
+          setChatId(chatData.chat._id);
+          setMessages(
+            chatData.messages.map((msg) => ({
+              sender: msg.sender._id === user._id ? "user" : "seller",
+              text: msg.text,
+            }))
+          );
+          setChatOpen(true);
+        }
+      } catch (err) {
+        console.error("Error loading existing chat:", err);
+      }
+    };
+
+    fetchExistingChat();
+  }, [user, product]);
+
+  // ✅ Start Chat handler
   const onStartChatClick = () => setShowSafetyModal(true);
-  const onContinueToChat = () => {
+
+  const onContinueToChat = async () => {
     setShowSafetyModal(false);
+
     if (!user) {
       showToast({ message: "Please login to chat", type: "error" });
       navigate("/login");
       return;
     }
-    setChatOpen(true);
-    showToast({ message: "Chat started!", type: "success" });
+
+    if (!product || !product.seller?._id) {
+      showToast({ message: "Seller info unavailable.", type: "error" });
+      console.error("❌ Seller data missing:", product);
+      return;
+    }
+
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/chats/get-or-create",
+        {
+          productId: product._id,
+          sellerId: product.seller._id,
+        },
+        { withCredentials: true }
+      );
+
+      console.log("🟢 Chat response:", res.data);
+
+      const chatData = res.data?.data;
+
+      if (chatData?.chat?._id) {
+        const chatId = chatData.chat._id;
+        const existingMessages = chatData.messages || [];
+
+        console.log("✅ Chat created/fetched:", chatId);
+        console.log("💬 Existing messages:", existingMessages);
+
+        setChatId(chatId);
+
+        // ✅ Load any previous messages
+        setMessages(
+          existingMessages.map((msg) => ({
+            sender: msg.sender._id === user._id ? "user" : "seller",
+            text: msg.text,
+          }))
+        );
+
+        setChatOpen(true);
+        showToast({ message: "Chat started successfully!", type: "success" });
+      } else {
+        console.warn("⚠️ Chat response missing chat data:", res.data);
+        showToast({
+          message: "Chat started, but no chat details received.",
+          type: "warning",
+        });
+      }
+    } catch (err) {
+      console.error("Error setting up chat:", err);
+      showToast({ message: "Failed to start chat.", type: "error" });
+    }
   };
 
   if (loading)
@@ -111,7 +205,9 @@ console.log("🟣 Product ID from URL:", id);
           <div className="lg:w-2/3 flex flex-col items-center">
             <div className="relative rounded-xl overflow-hidden shadow-lg max-w-md w-full group">
               <img
-                src={mainImage || "https://via.placeholder.com/400?text=No+Image"}
+                src={
+                  mainImage || "https://via.placeholder.com/400?text=No+Image"
+                }
                 alt={product.title}
                 className="w-full h-[350px] object-contain transition-transform duration-300 group-hover:scale-105"
               />
@@ -136,7 +232,7 @@ console.log("🟣 Product ID from URL:", id);
             </div>
           </div>
 
-          {/* ✅ Chat Box */}
+          {/* ✅ Chat Section */}
           <div className="lg:w-1/3 bg-gradient-to-b from-gray-50 to-white rounded-2xl p-6 shadow border border-gray-100 flex flex-col">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xl font-semibold text-gray-800">
@@ -146,37 +242,6 @@ console.log("🟣 Product ID from URL:", id);
                 {chatOpen ? "Online" : "Tap to start"}
               </span>
             </div>
-
-            {!chatOpen ? (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                  duration: 1.8,
-                }}
-                className="flex-1 flex items-center justify-center text-gray-500 italic rounded-lg bg-white/70 border border-dashed border-gray-300"
-              >
-                Start a conversation 💬
-              </motion.div>
-            ) : (
-              <div className="flex-1 flex flex-col space-y-3 overflow-y-auto p-3 bg-white rounded-lg border">
-                {messages.map((msg, i) => (
-                  <div
-                    key={i}
-                    className={`p-3 rounded-2xl text-sm max-w-[75%] shadow-sm ${
-                      msg.sender === "user"
-                        ? "bg-purple-600 text-white self-end rounded-br-none"
-                        : "bg-gray-200 text-gray-800 self-start rounded-bl-none"
-                    }`}
-                  >
-                    {msg.text}
-                  </div>
-                ))}
-                <div ref={chatEndRef} />
-              </div>
-            )}
 
             {user && product.seller && user._id === product.seller._id ? (
               <button
@@ -193,22 +258,11 @@ console.log("🟣 Product ID from URL:", id);
                 Start Chat
               </button>
             ) : (
-              <div className="mt-4 flex space-x-2">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Type your message..."
-                  className="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                />
-                <button
-                  onClick={handleSendMessage}
-                  className="bg-purple-600 text-white px-5 rounded-lg shadow hover:bg-purple-700 transition"
-                >
-                  Send
-                </button>
-              </div>
+              <ChatBox
+                chatId={chatId}
+                messages={messages}
+                setMessages={setMessages}
+              />
             )}
           </div>
         </div>
@@ -232,7 +286,7 @@ console.log("🟣 Product ID from URL:", id);
 
 export default ProductDetails;
 
-/* ------------ PRODUCT INFO SECTION (split for clarity) ------------- */
+/* ------------ PRODUCT INFO SECTION ------------- */
 const ProductInfoSection = ({ product, user }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -272,15 +326,11 @@ const ProductInfoSection = ({ product, user }) => {
           )}
         </div>
 
-        {/* Location */}
         <p className="text-gray-500">
-          {product?.location?.address
-            ? `${product.location.address}, `
-            : ""}
+          {product?.location?.address ? `${product.location.address}, ` : ""}
           {product?.location?.city || "Unknown City"}
         </p>
 
-        {/* Description */}
         <div className="border rounded-2xl p-5">
           <h2 className="text-lg font-semibold mb-2 text-gray-900">
             Description
@@ -291,7 +341,6 @@ const ProductInfoSection = ({ product, user }) => {
         </div>
       </div>
 
-      {/* Map Section */}
       <div className="lg:col-span-1">
         <h2 className="text-lg font-semibold mb-3 text-gray-900">Location</h2>
         <div className="rounded-2xl overflow-hidden shadow ring-1 ring-gray-200">

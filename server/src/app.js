@@ -1,3 +1,4 @@
+// server/src/app.js
 import express from "express"
 import cookieParser from "cookie-parser"
 import cors from "cors"
@@ -30,6 +31,9 @@ app.use("/api/geocode", geocodeRoutes)
 
 import paymentRouter from "./routes/payment.route.js";
 app.use("/api/payment", paymentRouter);
+
+import chatRoutes from "./routes/chat.route.js";
+app.use("/api/chats", chatRoutes);
 
 
 

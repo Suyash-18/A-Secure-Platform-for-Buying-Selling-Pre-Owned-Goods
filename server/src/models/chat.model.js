@@ -3,10 +3,22 @@ import mongoose from "mongoose";
 const chatSchema = new mongoose.Schema(
   {
     product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
-    users: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    lastMessage: { type: mongoose.Schema.Types.ObjectId, ref: "Message" },
+    participants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }],
+    lastMessage: { type: String, default: "" },
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Chat", chatSchema);
+// normalize participants order to avoid duplicates due to order
+chatSchema.pre("save", function(next) {
+  if (Array.isArray(this.participants)) {
+    // convert to string IDs and sort
+    this.participants = this.participants.map(id => id.toString()).sort();
+  }
+  next();
+});
+
+// compound index to help prevent duplicates (works if participants array is consistent order)
+chatSchema.index({ product: 1, participants: 1 }, { unique: true });
+
+export const Chat = mongoose.model("Chat", chatSchema);

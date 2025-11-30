@@ -113,8 +113,8 @@ const {AccessToken,RefreshToken} = await generateAccessAndRefreshTokens(user._id
  select("-password -refreshToken")
  const option = {
   httpOnly : true,
-  secure : true,
-  sameSite:"strict"
+  secure : process.env.NODE_ENV === "production",
+  sameSite:"lax"
  }
  console.log("user logged in");
  return res.status(200)
@@ -138,42 +138,59 @@ const client = new OAuth2Client("178540745723-jkllm1668tn8tjis51ishui0al180gjl.a
 
 export const googleLoginUser = async (req, res) => {
   const { token } = req.body;
+
   try {
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
+
     const payload = ticket.getPayload();
     const { email, name, picture } = payload;
 
     let user = await User.findOne({ email });
 
     if (!user) {
-      // ✅ Create Google user with defaults for required fields
-     user = await User.create({
-  username: name || email.split("@")[0],
-  fullname: name || "", // ✅ added this line
-  email,
-  avatar: picture,
-  password: "google_auth_user", // or null if not required
-  provider: "google",
-});
-
+      user = await User.create({
+        username: (name || email.split("@")[0]).toLowerCase(),
+        fullname: name || "",
+        email,
+        avatar: picture,
+        password: "google_auth_user",   // hashed via pre-save if you have it
+        provider: "google",
+      });
     }
 
-    // If you use JWTs:
-    // const token = user.generateAuthToken();
+    // ✅ Use the SAME token generator as normal login
+    const { AccessToken, RefreshToken } = await generateAccessAndRefreshTokens(user._id);
 
-    res.status(200).json({
-      success: true,
-      data: { user },
-      // token,
-    });
+    const loggedInUser = await User.findById(user._id).select(
+      "-password -refreshToken"
+    );
+
+    const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // ✅ only secure in prod
+      sameSite: "lax",
+    };
+
+    return res
+      .status(200)
+      .cookie("AccessToken", AccessToken, options)
+      .cookie("RefreshToken", RefreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          { user: loggedInUser, AccessToken, RefreshToken },
+          "OAuth login successful"
+        )
+      );
   } catch (error) {
     console.error("Google login error:", error);
-    res.status(400).json({ message: "Invalid Google token" });
+    return res.status(400).json({ message: "Invalid Google token" });
   }
 };
+
 const updateProfile = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const { fullname, username, email } = req.body;
