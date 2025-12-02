@@ -6,6 +6,7 @@ import { useToast } from "../contexts/ToastContext";
 import { motion, AnimatePresence } from "framer-motion";
 import CheckoutButton from "../components/CheckoutButton";
 import ChatBox from "../components/ChatBox";
+import CheckoutFlow from "../components/CheckoutFlow";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -322,7 +323,15 @@ const ProductInfoSection = ({ product, user }) => {
               ⚠️ You cannot purchase your own product.
             </p>
           ) : (
-            <CheckoutButton amount={product.price} productId={product._id} />
+            // <CheckoutButton amount={product.price} productId={product._id} />
+            <CheckoutFlow
+              product={product}
+              amount={product.price}
+              user={user}
+              onComplete={(order) => {
+                console.log("ORDER COMPLETED", order);
+              }}
+            />
           )}
         </div>
 
