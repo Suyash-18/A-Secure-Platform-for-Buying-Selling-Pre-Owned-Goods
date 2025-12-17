@@ -5,9 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon src/index.js"
-  },
+  "start": "node src/index.js",
+  "dev": "nodemon src/index.js"
+},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Suyash-18/A-Secure-Platform-for-Buying-Selling-Pre-Owned-Goods.git"

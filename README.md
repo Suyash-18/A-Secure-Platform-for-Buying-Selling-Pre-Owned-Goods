@@ -73,3 +73,36 @@ This project focuses on **security, trust, and usability** in second-hand market
 - Map view
 ![alt text](image-4.png)
 
+
+## ⚙️ Installation & Setup
+
+### Prerequisites
+- Node.js (v18+ recommended)
+- MongoDB
+- npm or yarn
+
+---
+
+### Backend Setup
+```bash
+cd server
+npm install
+npm start
+
+### Frontend Setup
+``` bash
+cd client
+npm install 
+npm run dev
+
+## ⚙️ Environment Variables
+
+Create a `.env` file inside `server/`:
+
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+RAZORPAY_KEY=your_razorpay_key
+RAZORPAY_SECRET=your_razorpay_secret
+GOOGLE_CLIENT_ID=your_google_client_id
