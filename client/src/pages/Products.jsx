@@ -54,7 +54,7 @@ const Products = () => {
           {products.map((product) => (
             <Link
               key={product._id}
-              to={`/product/${product._id}`}
+              to={`/products/${product._id}`}
               className="block break-inside-avoid bg-white p-4 rounded-2xl shadow hover:shadow-lg transition border border-[#f0e9ff]"
             >
               <img

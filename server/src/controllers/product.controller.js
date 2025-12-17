@@ -130,7 +130,9 @@ export const getProductsByUser = asyncHandler(async (req, res) => {
 
 export const getSingleProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const product = await Product.findById(id);
+  // const product = await Product.findById(id);
+  const product = await Product.findById(id).populate("seller", "_id fullname email");
+
 
   if (!product) {
     return res.status(404).json({
