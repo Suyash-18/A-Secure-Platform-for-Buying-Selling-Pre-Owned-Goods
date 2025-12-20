@@ -52,10 +52,10 @@ const Footer = ({ darkMode }) => {
         <div>
           <h3 className="font-semibold mb-2">Follow Us</h3>
           <div className="flex gap-4 text-xl">
-            <a href="#" className="hover:text-[#9575cd]"><FaFacebook /></a>
-            <a href="#" className="hover:text-[#9575cd]"><FaInstagram /></a>
-            <a href="#" className="hover:text-[#9575cd]"><FaTwitter /></a>
-            <a href="#" className="hover:text-[#9575cd]"><FaLinkedin /></a>
+            <a href="facebook.com" className="hover:text-[#9575cd]"><FaFacebook /></a>
+            <a href="instagram.com" className="hover:text-[#9575cd]"><FaInstagram /></a>
+            <a href="twitter.com" className="hover:text-[#9575cd]"><FaTwitter /></a>
+            <a href="linkedin.com" className="hover:text-[#9575cd]"><FaLinkedin /></a>
           </div>
         </div>
       </div>
