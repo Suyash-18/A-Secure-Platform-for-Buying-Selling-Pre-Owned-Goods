@@ -8,12 +8,19 @@ const API_ROOT = "http://localhost:5000/api";
 const Ticks = ({ msg }) => {
   // treat many possible truthy flags as "seen"
   const seen = !!(msg.seen || msg.read || msg.isRead || msg.status === "read");
-  const delivered = !!(msg.delivered || msg.status === "delivered" || msg.status === "delivered_to_recipient");
+  const delivered = !!(
+    msg.delivered ||
+    msg.status === "delivered" ||
+    msg.status === "delivered_to_recipient"
+  );
   const sent = !!(msg.status === "sent" || msg.status === "queued" || msg._id);
 
-  if (seen) return <span className="ml-2 text-xs font-bold text-blue-500">✓✓</span>;
-  if (delivered) return <span className="ml-2 text-xs font-bold text-gray-500">✓✓</span>;
-  if (sent) return <span className="ml-2 text-xs font-bold text-gray-400">✓</span>;
+  if (seen)
+    return <span className="ml-2 text-xs font-bold text-blue-500">✓✓</span>;
+  if (delivered)
+    return <span className="ml-2 text-xs font-bold text-gray-500">✓✓</span>;
+  if (sent)
+    return <span className="ml-2 text-xs font-bold text-gray-400">✓</span>;
   return <span className="ml-2 text-xs font-bold text-gray-400">✓</span>;
 };
 
@@ -26,7 +33,9 @@ const ChatBox = ({ chatId, onClose, markParentRead }) => {
   // fetch messages
   const fetchMessages = async () => {
     try {
-      const res = await axios.get(`${API_ROOT}/chats/${chatId}`, { withCredentials: true });
+      const res = await axios.get(`${API_ROOT}/chats/${chatId}`, {
+        withCredentials: true,
+      });
       // accept messages in res.data.data OR res.data.messages etc.
       const msgs = res.data?.data || res.data?.messages || [];
       setMessages(msgs);
@@ -42,12 +51,16 @@ const ChatBox = ({ chatId, onClose, markParentRead }) => {
     // mark read on open - try server, but always mark locally
     (async () => {
       try {
-        await axios.post(`${API_ROOT}/chats/${chatId}/mark-read`, {}, { withCredentials: true });
+        await axios.post(
+          `${API_ROOT}/chats/${chatId}/mark-read`,
+          {},
+          { withCredentials: true }
+        );
       } catch (err) {
         console.warn("mark-read failed:", err?.message);
       } finally {
         // locally mark messages as seen and notify parent to clear badge
-        setMessages(prev => prev.map(m => ({ ...m, seen: true })));
+        setMessages((prev) => prev.map((m) => ({ ...m, seen: true })));
         if (typeof markParentRead === "function") markParentRead(chatId);
       }
     })();
@@ -59,9 +72,9 @@ const ChatBox = ({ chatId, onClose, markParentRead }) => {
   }, [messages]);
 
   const appendIfNew = (m) => {
-    setMessages(prev => {
+    setMessages((prev) => {
       if (!m) return prev;
-      if (prev.some(x => x._id === m._id)) return prev;
+      if (prev.some((x) => x._id === m._id)) return prev;
       return [...prev, m];
     });
   };
@@ -85,14 +98,18 @@ const ChatBox = ({ chatId, onClose, markParentRead }) => {
     setText("");
 
     try {
-      const res = await axios.post(`${API_ROOT}/chats/send`, { chatId, text: body }, { withCredentials: true });
+      const res = await axios.post(
+        `${API_ROOT}/chats/send`,
+        { chatId, text: body },
+        { withCredentials: true }
+      );
       const saved = res.data?.data || res.data?.message;
       if (saved) {
         // replace optimistic
-        setMessages(prev => {
-          const filtered = prev.filter(x => x._id !== optimistic._id);
+        setMessages((prev) => {
+          const filtered = prev.filter((x) => x._id !== optimistic._id);
           // avoid duplicates
-          if (filtered.some(x => x._id === saved._id)) return filtered;
+          if (filtered.some((x) => x._id === saved._id)) return filtered;
           return [...filtered, saved];
         });
       } else {
@@ -101,7 +118,9 @@ const ChatBox = ({ chatId, onClose, markParentRead }) => {
     } catch (err) {
       console.error("send failed:", err);
       // mark optimistic as failed
-      setMessages(prev => prev.map(m => m._id === optimistic._id ? { ...m, failed: true } : m));
+      setMessages((prev) =>
+        prev.map((m) => (m._id === optimistic._id ? { ...m, failed: true } : m))
+      );
     }
   };
 
@@ -126,7 +145,12 @@ const ChatBox = ({ chatId, onClose, markParentRead }) => {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={onClose} className="px-3 py-1 rounded-md hover:bg-gray-100">Close</button>
+          <button
+            onClick={onClose}
+            className="px-3 py-1 rounded-md hover:bg-gray-100"
+          >
+            Close
+          </button>
         </div>
       </div>
 
@@ -135,16 +159,32 @@ const ChatBox = ({ chatId, onClose, markParentRead }) => {
         {messages.length === 0 ? (
           <div className="text-center text-gray-400">No messages yet</div>
         ) : (
-          messages.map(m => {
+          messages.map((m) => {
             const mine = isMine(m);
             return (
-              <div key={m._id} className={`max-w-[72%] ${mine ? "ml-auto text-right" : "mr-auto text-left"}`}>
-                <div className={`inline-block px-4 py-2 rounded-2xl ${mine ? "bg-purple-600 text-white" : "bg-white text-gray-800 shadow"}`}>
-                  <div className="text-sm break-words">{m.text}</div>
+              <div
+                key={m._id}
+                className={`w-fit max-w-[70%] ${
+                  mine ? "ml-auto text-right" : "mr-auto text-left"
+                }`}
+              >
+                <div
+                  className={`inline-block px-4 py-2 rounded-2xl ${
+                    mine
+                      ? "bg-purple-600 text-white"
+                      : "bg-white text-gray-800 shadow"
+                  }`}
+                >
+                  <div className="text-sm break-all whitespace-pre-wrap">
+                    {m.text}
+                  </div>
+
                   <div className="text-[10px] mt-1 flex items-center justify-end text-gray-300">
                     <span>{niceTime(m.createdAt)}</span>
                     {mine && <Ticks msg={m} />}
-                    {m.failed && <span className="ml-2 text-xs text-red-500">!</span>}
+                    {m.failed && (
+                      <span className="ml-2 text-xs text-red-500">!</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -159,12 +199,19 @@ const ChatBox = ({ chatId, onClose, markParentRead }) => {
         <div className="flex gap-3">
           <input
             value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") send(); }}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") send();
+            }}
             placeholder="Type a message"
             className="flex-1 px-4 py-2 border rounded-full focus:outline-none"
           />
-          <button onClick={send} className="bg-purple-600 text-white px-4 py-2 rounded-full">Send</button>
+          <button
+            onClick={send}
+            className="bg-purple-600 text-white px-4 py-2 rounded-full"
+          >
+            Send
+          </button>
         </div>
       </div>
     </div>
